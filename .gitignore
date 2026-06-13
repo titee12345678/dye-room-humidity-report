@@ -1,0 +1,5 @@
+.DS_Store
+# temp verification artifacts
+_*.png
+_check.js
+_harness.js

@@ -12,7 +12,7 @@ assert CDN in tpl, "Chart.js CDN <script> tag not found in template.html"
 tpl = tpl.replace(CDN, "<script>" + chart + "</script>")  # inline Chart.js (works offline)
 html = tpl.replace("__DATA_PLACEHOLDER__", data)           # inline the dataset
 
-with open("index.html", "w", encoding="utf-8") as f:
+with open("public/snapshot.html", "w", encoding="utf-8") as f:
     f.write(html)
 
-print("index.html built:", len(html), "bytes")
+print("public/snapshot.html built:", len(html), "bytes")

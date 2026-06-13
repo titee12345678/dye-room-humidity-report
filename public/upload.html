@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>อัปโหลดข้อมูล · ห้องเก็บสีย้อม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="ic">🎨</span> ห้องเก็บสีย้อม</div>
+    <a class="navbtn" href="index.html">📊 ดูแดชบอร์ด</a>
+  </div>
+  <h1>อัปโหลดข้อมูล</h1>
+  <div class="dates">รองรับไฟล์ CSV จากเซนเซอร์ IBS-TH3-PLUS (UTF-16/Tab) และ CSV ทั่วไป (UTF-8/comma) · ข้อมูลซ้ำจะถูกข้ามอัตโนมัติ</div>
+
+  <section>
+    <div class="zone" id="zone">
+      <div class="big">⬆️</div>
+      <div class="t">แตะเพื่อเลือกไฟล์ หรือลากไฟล์มาวางที่นี่</div>
+      <div class="s">ไฟล์ .csv</div>
+      <input type="file" id="fileInput" accept=".csv,text/csv" class="hidden">
+    </div>
+
+    <div id="preview" class="preview hidden"></div>
+
+    <div class="field" id="pwField" style="display:none">
+      <label for="pw">รหัสผ่านสำหรับอัปโหลด</label>
+      <input type="password" id="pw" placeholder="ใส่รหัสผ่าน" autocomplete="current-password">
+    </div>
+
+    <button class="btn" id="submit" disabled>เลือกไฟล์ก่อน</button>
+
+    <div class="progress hidden" id="progressWrap"><div class="fill" id="progressFill"></div></div>
+    <div id="result"></div>
+  </section>
+
+  <footer>การดูข้อมูลเปิดสาธารณะ · การอัปโหลดต้องใส่รหัสผ่าน</footer>
+</div>
+<script type="module" src="upload-app.js"></script>
+</body>
+</html>

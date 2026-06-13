@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>แดชบอร์ดความชื้น · ห้องเก็บสีย้อม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="chart.umd.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="ic">🎨</span> ห้องเก็บสีย้อม</div>
+    <a class="navbtn" href="upload.html">⬆️ อัปโหลดข้อมูล</a>
+  </div>
+  <h1>แดชบอร์ดความชื้น</h1>
+  <div class="dates" id="dataInfo">กำลังโหลด…</div>
+
+  <div class="rangebar" id="rangebar">
+    <button data-range="day">วัน</button>
+    <button data-range="week">สัปดาห์</button>
+    <button data-range="month" class="active">เดือน</button>
+    <button data-range="year">ปี</button>
+  </div>
+
+  <div class="pernav">
+    <button class="arrow" id="prev" aria-label="ก่อนหน้า">‹</button>
+    <div class="picker">
+      <span class="lab" id="pickerLab">เดือน</span>
+      <input type="month" id="picker">
+    </div>
+    <button class="arrow" id="next" aria-label="ถัดไป">›</button>
+  </div>
+
+  <div id="content">
+    <div class="note"><div class="spin"></div></div>
+  </div>
+
+  <footer>เซนเซอร์ Inkbird IBS-TH3-PLUS · เกณฑ์เก็บสีย้อม: ความชื้นควรต่ำกว่า 60%</footer>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

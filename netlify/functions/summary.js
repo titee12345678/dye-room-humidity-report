@@ -47,7 +47,25 @@ export default async (req) => {
         GROUP BY 1 ORDER BY 1`;
     }
 
-    return json({ range, date, start, end, grain, label, summary, points });
+    // hour-of-day pattern (avg across the period) — "ช่วงไหนชื้น"
+    const hourly = await sql`
+      SELECT extract(hour from ts)::int AS h,
+        round(avg(hum)::numeric, 1) AS hum, round(avg(temp)::numeric, 1) AS temp
+      FROM readings
+      WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
+      GROUP BY 1 ORDER BY 1`;
+
+    // humidity level distribution — "สัดส่วนระดับความชื้น"
+    const dist = (await sql`
+      SELECT
+        sum(CASE WHEN hum < 40 THEN 1 ELSE 0 END)::int AS dry,
+        sum(CASE WHEN hum >= 40 AND hum < 60 THEN 1 ELSE 0 END)::int AS ideal,
+        sum(CASE WHEN hum >= 60 AND hum < 70 THEN 1 ELSE 0 END)::int AS humid,
+        sum(CASE WHEN hum >= 70 THEN 1 ELSE 0 END)::int AS veryhigh
+      FROM readings
+      WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp`)[0];
+
+    return json({ range, date, start, end, grain, label, summary, points, hourly, dist });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

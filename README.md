@@ -16,7 +16,7 @@ public/  (เว็บ static, ดูสาธารณะ)        netlify/funct
 ```
 - โฮสต์ฟรี: **Netlify** (static + serverless functions) + **Neon** (Postgres ฟรี 0.5GB)
 - อัปโหลดรองรับ CSV เซนเซอร์ (UTF-16/Tab) และ CSV ทั่วไป (UTF-8/comma) — parse ฝั่ง browser แล้วส่งเป็น JSON
-- **ดูสาธารณะ / อัปโหลดต้องใส่รหัสผ่าน** (env `UPLOAD_PASSWORD`)
+- **เปิดให้ดูและอัปโหลดได้** (ไม่ต้องใส่รหัส)
 - กันข้อมูลซ้ำด้วย primary key `(device_mac, ts)` + `ON CONFLICT DO NOTHING`
 - ลิงก์แชร์มุมมองเฉพาะได้ เช่น `/?range=month&date=2026-06-01`
 
@@ -38,7 +38,7 @@ docs/superpowers/specs/ เอกสารออกแบบ
 ## รันในเครื่อง (local dev)
 ```bash
 npm install
-cp .env.example .env          # ใส่ DATABASE_URL ของ Neon + ตั้ง UPLOAD_PASSWORD
+cp .env.example .env          # ใส่ DATABASE_URL ของ Neon
 npm run migrate               # สร้างตาราง readings
 npm run seed                  # (ทางเลือก) นำเข้าข้อมูลเดิมจาก data.json
 npx netlify dev               # เปิด http://localhost:8888
@@ -49,7 +49,7 @@ npx netlify dev               # เปิด http://localhost:8888
 2. รันในเครื่อง: `npm install` → ใส่ `DATABASE_URL` ใน `.env` → `npm run migrate` → (ทางเลือก) `npm run seed`
 3. **GitHub** — push repo นี้ (มีอยู่แล้ว)
 4. **Netlify** — app.netlify.com → Add new site → Import จาก GitHub → เลือก repo
-   - Environment variables: ตั้ง `DATABASE_URL` (จาก Neon) และ `UPLOAD_PASSWORD` (รหัสที่ตั้งเอง)
+   - Environment variables: ตั้ง `DATABASE_URL` (จาก Neon)
    - Deploy → ได้ลิงก์ `https://<ชื่อ>.netlify.app`
 5. เปิดลิงก์ → ถ้ายังว่าง ไปหน้า **อัปโหลด** เพื่อใส่ไฟล์ CSV (หรือใช้ `npm run seed` ก็ได้)
 

@@ -1,14 +1,9 @@
 import { sql, json } from "../../shared/db.js";
 
-// POST /api/upload  (header: x-upload-password)
+// POST /api/upload  (open — no password)
 // body: { mac, rows: [{ts, temp, hum, dew, vpd}] }  -- already parsed client-side, sent in chunks
 export default async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
-
-  const expected = process.env.UPLOAD_PASSWORD;
-  if (!expected) return json({ error: "เซิร์ฟเวอร์ยังไม่ได้ตั้งรหัสอัปโหลด (UPLOAD_PASSWORD)" }, 500);
-  const pw = req.headers.get("x-upload-password") || "";
-  if (pw !== expected) return json({ error: "รหัสผ่านไม่ถูกต้อง" }, 401);
 
   let body;
   try { body = await req.json(); } catch { return json({ error: "รูปแบบข้อมูลไม่ถูกต้อง" }, 400); }

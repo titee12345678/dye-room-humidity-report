@@ -3,7 +3,7 @@ import { parseFile } from "./parse.js";
 
 const el = (id) => document.getElementById(id);
 const zone = el("zone"), fileInput = el("fileInput"), preview = el("preview");
-const pwField = el("pwField"), submitBtn = el("submit");
+const submitBtn = el("submit");
 const progressWrap = el("progressWrap"), progressFill = el("progressFill"), result = el("result");
 const TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
@@ -31,7 +31,7 @@ async function handleFile(file) {
   if (!parsed.rows.length) {
     showResult("err", "ไม่พบข้อมูลที่อ่านได้ในไฟล์นี้ (ตรวจรูปแบบไฟล์อีกครั้ง)");
     submitBtn.disabled = true; submitBtn.textContent = "เลือกไฟล์ก่อน";
-    preview.classList.add("hidden"); pwField.style.display = "none";
+    preview.classList.add("hidden");
     return;
   }
   const rows = parsed.rows;
@@ -42,7 +42,6 @@ async function handleFile(file) {
     <div class="row"><span>จำนวนแถวที่อ่านได้</span><b>${rows.length.toLocaleString()} แถว</b></div>
     <div class="row"><span>ช่วงเวลา</span><b>${fmtDay(rows[0].ts)} – ${fmtDay(rows[rows.length-1].ts)}</b></div>
     ${parsed.skipped ? `<div class="row"><span>ข้ามแถวที่อ่านไม่ได้</span><b>${parsed.skipped}</b></div>` : ""}`;
-  pwField.style.display = "block";
   submitBtn.disabled = false; submitBtn.textContent = `บันทึก ${rows.length.toLocaleString()} แถวลงฐานข้อมูล`;
 }
 
@@ -50,8 +49,6 @@ function showResult(kind, msg) { result.innerHTML = `<div class="result ${kind}"
 
 submitBtn.addEventListener("click", async () => {
   if (!parsed || !parsed.rows.length) return;
-  const pw = el("pw").value.trim();
-  if (!pw) { showResult("err", "กรุณาใส่รหัสผ่าน"); return; }
 
   submitBtn.disabled = true; submitBtn.textContent = "กำลังบันทึก…";
   progressWrap.classList.remove("hidden"); result.innerHTML = "";
@@ -62,7 +59,7 @@ submitBtn.addEventListener("click", async () => {
       const chunk = rows.slice(i, i + CH);
       const r = await fetch("/api/upload", {
         method: "POST",
-        headers: { "content-type": "application/json", "x-upload-password": pw },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({ mac: parsed.mac, rows: chunk }),
       });
       const j = await r.json().catch(() => ({ error: "การเชื่อมต่อผิดพลาด" }));

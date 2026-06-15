@@ -4,6 +4,7 @@
   "description": "Humidity/temperature dashboard for a dye storage room (Netlify + Neon)",
   "type": "module",
   "scripts": {
+    "test": "node test.mjs",
     "migrate": "node migrate.js",
     "seed": "node seed.js",
     "dev": "netlify dev"

@@ -17,7 +17,20 @@ const sql = neon(url);
         PRIMARY KEY (device_mac, ts)
       )`;
     await sql`CREATE INDEX IF NOT EXISTS readings_ts_idx ON readings (ts)`;
-    console.log("✅ Schema ready (table 'readings')");
+
+    // devices: friendly name per sensor
+    await sql`
+      CREATE TABLE IF NOT EXISTS devices (
+        device_mac text PRIMARY KEY,
+        name       text NOT NULL DEFAULT '',
+        created_at timestamptz DEFAULT now()
+      )`;
+    // register any devices already present in readings (default name = MAC)
+    await sql`
+      INSERT INTO devices (device_mac, name)
+      SELECT DISTINCT device_mac, device_mac FROM readings
+      ON CONFLICT (device_mac) DO NOTHING`;
+    console.log("✅ Schema ready (tables 'readings', 'devices')");
     process.exit(0);
   } catch (e) {
     console.error("❌ Migrate failed:", e.message);

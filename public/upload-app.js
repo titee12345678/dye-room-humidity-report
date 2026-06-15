@@ -3,7 +3,7 @@ import { parseFile } from "./parse.js";
 
 const el = (id) => document.getElementById(id);
 const zone = el("zone"), fileInput = el("fileInput"), preview = el("preview");
-const submitBtn = el("submit");
+const submitBtn = el("submit"), nameField = el("nameField"), devName = el("devName");
 const progressWrap = el("progressWrap"), progressFill = el("progressFill"), result = el("result");
 const TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 
@@ -31,7 +31,7 @@ async function handleFile(file) {
   if (!parsed.rows.length) {
     showResult("err", "ไม่พบข้อมูลที่อ่านได้ในไฟล์นี้ (ตรวจรูปแบบไฟล์อีกครั้ง)");
     submitBtn.disabled = true; submitBtn.textContent = "เลือกไฟล์ก่อน";
-    preview.classList.add("hidden");
+    preview.classList.add("hidden"); nameField.style.display = "none";
     return;
   }
   const rows = parsed.rows;
@@ -43,6 +43,13 @@ async function handleFile(file) {
     <div class="row"><span>ช่วงเวลา</span><b>${fmtDay(rows[0].ts)} – ${fmtDay(rows[rows.length-1].ts)}</b></div>
     ${parsed.skipped ? `<div class="row"><span>ข้ามแถวที่อ่านไม่ได้</span><b>${parsed.skipped}</b></div>` : ""}`;
   submitBtn.disabled = false; submitBtn.textContent = `บันทึก ${rows.length.toLocaleString()} แถวลงฐานข้อมูล`;
+  // prefill device name if this MAC is already named (something other than the MAC itself)
+  nameField.style.display = "block"; devName.value = "";
+  try {
+    const r = await fetch("/api/devices"); const j = await r.json();
+    const found = (j.devices || []).find((d) => d.mac === parsed.mac);
+    if (found && found.name && found.name !== parsed.mac) devName.value = found.name;
+  } catch {}
 }
 
 function showResult(kind, msg) { result.innerHTML = `<div class="result ${kind}">${msg}</div>`; }
@@ -60,7 +67,7 @@ submitBtn.addEventListener("click", async () => {
       const r = await fetch("/api/upload", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mac: parsed.mac, rows: chunk }),
+        body: JSON.stringify({ mac: parsed.mac, name: devName.value.trim(), rows: chunk }),
       });
       const j = await r.json().catch(() => ({ error: "การเชื่อมต่อผิดพลาด" }));
       if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));

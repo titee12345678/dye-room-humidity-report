@@ -25,6 +25,14 @@ a{color:var(--blue-d);text-decoration:none}
 h1{font-weight:700;font-size:clamp(24px,6.5vw,32px);line-height:1.2;margin:12px 0 2px;letter-spacing:-.01em}
 .dates{color:var(--muted);font-size:13.5px}
 
+/* device selector */
+.devrow{display:flex;align-items:center;gap:8px;margin-top:14px;background:var(--card);border:1px solid var(--line);
+  border-radius:14px;padding:8px 12px;box-shadow:var(--sh)}
+.devrow .devlab{font-size:13px;color:var(--muted);font-weight:600;flex:0 0 auto}
+.devsel{flex:1;min-width:0;font-family:inherit;font-size:14.5px;font-weight:600;color:var(--ink);
+  border:none;background:transparent;outline:none;padding:4px 2px;cursor:pointer}
+.devrow .navbtn{flex:0 0 auto;padding:7px 11px;font-size:12.5px}
+
 /* range tabs */
 .rangebar{display:flex;gap:6px;margin-top:18px;background:var(--card);border:1px solid var(--line);
   border-radius:14px;padding:5px;box-shadow:var(--sh)}
@@ -103,7 +111,7 @@ tbody tr:last-child td{border-bottom:none}
 .zone .s{font-size:12.5px;color:var(--muted);margin-top:3px}
 .field{margin-top:16px}
 .field label{font-size:13px;font-weight:600;color:var(--ink2);display:block;margin-bottom:6px}
-.field input[type=password]{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);outline:none}
+.field input[type=password],.field input[type=text]{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);outline:none}
 .field input:focus{border-color:var(--blue)}
 .btn{width:100%;font-family:inherit;font-size:15px;font-weight:700;color:#fff;background:var(--blue-d);border:none;
   padding:14px;border-radius:14px;cursor:pointer;margin-top:16px;box-shadow:var(--sh)}

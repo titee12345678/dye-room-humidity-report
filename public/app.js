@@ -2,11 +2,22 @@
 const API = "/api";
 const TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
 const COL = { blue: "#0ea5e9", orange: "#f97316" };
+// chart styling pulled from CSS vars so charts follow light/dark theme
+function cssVar(n, fb) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim() || fb; }
+function chartTheme() {
+  return {
+    grid: cssVar("--chart-grid", "rgba(19,33,61,.07)"),
+    tick: cssVar("--chart-tick", "#5d6b86"),
+    tipBg: cssVar("--chart-tooltip-bg", "rgba(15,23,42,.92)"),
+    tipFg: cssVar("--chart-tooltip-fg", "#f1f5f9"),
+  };
+}
 
 // state
 let state = { range: "month", date: todayStr(), minDate: null, maxDate: null, count: 0, device: null };
 let charts = [];
 let devices = [];
+let lastData = null;
 
 // elements
 const el = (id) => document.getElementById(id);
@@ -88,6 +99,7 @@ async function load() {
 
 /* ---------- render ---------- */
 function render(data) {
+  lastData = data;
   const s = data.summary;
   const n = num(s.n) || 0;
   if (n === 0) {
@@ -192,19 +204,21 @@ function drawChart(data) {
 }
 
 function baseOpts(o) {
+  const t = chartTheme();
   const opt = {
     responsive: true, maintainAspectRatio: false,
     interaction: { mode: "index", intersect: false },
     plugins: { legend: { display: false }, tooltip: {
-      backgroundColor: "#15212e", padding: 11, cornerRadius: 10, displayColors: false,
+      backgroundColor: t.tipBg, titleColor: t.tipFg, bodyColor: t.tipFg,
+      padding: 11, cornerRadius: 10, displayColors: false,
       titleFont: { weight: "600" }, callbacks: {} } },
     scales: {},
   };
   if (o.dualAxis) {
     opt.plugins.tooltip.callbacks.label = (i) => i.dataset.label + ": " + i.parsed.y + (i.dataset.yAxisID === "yH" ? "%" : "°C");
     opt.scales = {
-      x: { grid: { display: false }, ticks: { maxTicksLimit: o.xTicks, font: { size: 10 } } },
-      yH: { position: "left", grid: { color: "#f0f3f6" }, ticks: { color: COL.blue, callback: (v) => v + "%" } },
+      x: { grid: { display: false }, ticks: { color: t.tick, maxTicksLimit: o.xTicks, font: { size: 10 } } },
+      yH: { position: "left", grid: { color: t.grid }, ticks: { color: COL.blue, callback: (v) => v + "%" } },
       yT: { position: "right", grid: { display: false }, ticks: { color: COL.orange, callback: (v) => v + "°" } },
     };
   }
@@ -214,8 +228,8 @@ function baseOpts(o) {
       return ["เฉลี่ย " + num(p.hum) + "% (" + humInfo(num(p.hum)).label + ")", "ช่วง " + num(p.hum_min) + "–" + num(p.hum_max) + "%"];
     };
     opt.scales = {
-      x: { grid: { display: false }, ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: o.isMonth ? 12 : 16, font: { size: 10 } } },
-      y: { min: 0, max: 100, grid: { color: "#f0f3f6" }, ticks: { stepSize: 25, callback: (v) => v + "%" } },
+      x: { grid: { display: false }, ticks: { color: t.tick, maxRotation: 0, autoSkip: true, maxTicksLimit: o.isMonth ? 12 : 16, font: { size: 10 } } },
+      y: { min: 0, max: 100, grid: { color: t.grid }, ticks: { color: t.tick, stepSize: 25, callback: (v) => v + "%" } },
     };
   }
   return opt;
@@ -240,6 +254,7 @@ function drawTable(data) {
 }
 
 function drawHourly(data) {
+  const th = chartTheme();
   const H = (data.hourly || []).map(h => ({ h: num(h.h), hum: num(h.hum), temp: num(h.temp) }));
   const ins = el("hourInsight");
   if (H.length < 2) { if (ins) ins.innerHTML = ""; return; }
@@ -258,15 +273,17 @@ function drawHourly(data) {
       { label: "ความชื้น", yAxisID: "yH", data: H.map(h => h.hum), borderColor: COL.blue, borderWidth: 2.5, tension: .4, pointRadius: 0, fill: true, backgroundColor: "rgba(14,165,233,.13)" },
       { label: "อุณหภูมิ", yAxisID: "yT", data: H.map(h => h.temp), borderColor: COL.orange, borderWidth: 2.5, tension: .4, pointRadius: 0 } ] },
     options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: "#15212e", padding: 11, cornerRadius: 10, displayColors: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: th.tipBg, titleColor: th.tipFg, bodyColor: th.tipFg, padding: 11, cornerRadius: 10, displayColors: false,
         callbacks: { title: i => i[0].label + ":00 น.", label: i => i.dataset.label + ": " + i.parsed.y + (i.dataset.yAxisID === "yH" ? "%" : "°C") } } },
-      scales: { x: { grid: { display: false }, ticks: { callback: v => v + "น.", maxTicksLimit: 8, font: { size: 9.5 } } },
-        yH: { position: "left", grid: { color: "#f0f3f6" }, ticks: { color: COL.blue, callback: v => v + "%" } },
+      scales: { x: { grid: { display: false }, ticks: { color: th.tick, callback: v => v + "น.", maxTicksLimit: 8, font: { size: 9.5 } } },
+        yH: { position: "left", grid: { color: th.grid }, ticks: { color: COL.blue, callback: v => v + "%" } },
         yT: { position: "right", grid: { display: false }, ticks: { color: COL.orange, callback: v => v + "°" } } } },
   });
 }
 
 function drawDist(data) {
+  const th = chartTheme();
+  const darkMode = document.documentElement.getAttribute("data-theme") === "dark";
   const d = data.dist || {};
   const order = [["dry", "แห้ง", "ต่ำกว่า 40%", "#f59e0b"], ["ideal", "สบาย", "40–60%", "#16a34a"],
     ["humid", "ชื้น", "60–70%", "#0ea5e9"], ["veryhigh", "ชื้นมาก", "เกิน 70%", "#ef4444"]];
@@ -274,9 +291,10 @@ function drawDist(data) {
   const total = vals.reduce((a, b) => a + b, 0) || 1;
   mkChart(el("chartDist"), {
     type: "doughnut",
-    data: { labels: order.map(o => o[1]), datasets: [{ data: vals, backgroundColor: order.map(o => o[3]), borderColor: "#fff", borderWidth: 3, hoverOffset: 5 }] },
+    data: { labels: order.map(o => o[1]), datasets: [{ data: vals, backgroundColor: order.map(o => o[3]),
+      borderColor: darkMode ? "rgba(15,23,42,.5)" : "#fff", borderWidth: 3, hoverOffset: 5 }] },
     options: { responsive: true, maintainAspectRatio: false, cutout: "66%",
-      plugins: { legend: { display: false }, tooltip: { backgroundColor: "#15212e", padding: 10, cornerRadius: 10, displayColors: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: th.tipBg, titleColor: th.tipFg, bodyColor: th.tipFg, padding: 10, cornerRadius: 10, displayColors: false,
         callbacks: { label: i => i.label + ": " + (i.parsed / total * 100).toFixed(1) + "%" } } } },
   });
   el("distBig").textContent = Math.round(vals[3] / total * 100) + "%";
@@ -302,6 +320,8 @@ document.querySelectorAll("#rangebar button").forEach(b =>
 el("prev").addEventListener("click", () => shift(-1));
 el("next").addEventListener("click", () => shift(1));
 picker.addEventListener("change", () => { state.date = pickerToDate(); load(); });
+// re-render charts with theme-aware colors when light/dark is toggled
+window.addEventListener("themechange", () => { if (lastData) render(lastData); });
 
 /* ---------- devices ---------- */
 function setDataInfo(d) {

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>อัปโหลดข้อมูล · ห้องเก็บสีย้อม</title>
+<script src="theme.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -13,7 +14,10 @@
 <div class="wrap">
   <div class="topbar">
     <div class="brand"><span class="ic">🎨</span> ห้องเก็บสีย้อม</div>
-    <a class="navbtn" href="index.html">📊 ดูแดชบอร์ด</a>
+    <div class="top-actions">
+      <button class="navbtn theme-toggle" type="button" aria-label="สลับโหมดสว่าง/มืด"><span data-theme-icon>🌙</span></button>
+      <a class="navbtn" href="index.html">📊 ดูแดชบอร์ด</a>
+    </div>
   </div>
   <h1>อัปโหลดข้อมูล</h1>
   <div class="dates">รองรับไฟล์ CSV จากเซนเซอร์ IBS-TH3-PLUS (UTF-16/Tab) และ CSV ทั่วไป (UTF-8/comma) · ข้อมูลซ้ำจะถูกข้ามอัตโนมัติ</div>

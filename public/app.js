@@ -157,13 +157,20 @@ function render(data) {
           <div class="center"><div class="n" id="distBig">0%</div><div class="l">ชื้นมาก</div></div></div>
         <div id="distLegend"></div>
       </div>
-    </div>`;
+    </div>
+    ${data.grain !== "raw" ? `
+    <div class="card chart-card">
+      <div class="chart-head"><div class="chart-title">แผนที่ความร้อน: ความชื้นเฉลี่ย วัน × ชั่วโมง</div>
+        <div class="chart-sub">สีอ่อน = แห้ง · สีเข้ม = ชื้นมาก — เห็นรูปแบบรายวัน (ชื้นช่วงกลางคืน–เช้ามืด)</div></div>
+      <div id="heatWrap"></div>
+    </div>` : ""}`;
 
   destroyCharts();
   drawChart(data);
   drawTable(data);
   drawHourly(data);
   drawDist(data);
+  drawHeat(data);
 }
 
 function shade(hex) {
@@ -190,15 +197,18 @@ function drawChart(data) {
     });
   } else {
     const isMonth = data.grain === "month";
-    el("chTitle").textContent = isMonth ? "ความชื้นเฉลี่ยรายเดือน" : "ความชื้นเฉลี่ยรายวัน";
-    el("chSub").textContent = "สีของแท่งบอกระดับ — เขียว=สบาย ฟ้า=ชื้น แดง=ชื้นมาก";
-    el("lg").innerHTML = "";
+    el("chTitle").textContent = "สรุปราย" + (isMonth ? "เดือน" : "วัน") + " (ต่ำสุด–สูงสุด–เฉลี่ย)";
+    el("chSub").textContent = "แท่ง = ช่วงต่ำสุด–สูงสุดในวันนั้น · เส้นส้ม = ค่าเฉลี่ย";
+    el("lg").innerHTML = `<span><i style="background:${COL.blue}"></i>ช่วงต่ำ–สูง</span><span><i style="background:${COL.orange}"></i>ค่าเฉลี่ย</span>`;
     const labels = pts.map(p => isMonth ? TH_MON[Number(p.t.slice(5,7)) - 1] : (Number(p.t.slice(8,10)) + ""));
     mkChart(ctx, {
       type: "bar",
-      data: { labels, datasets: [{ data: pts.map(p => num(p.hum)),
-        backgroundColor: pts.map(p => humInfo(num(p.hum)).c), borderRadius: 6, barPercentage: .8, categoryPercentage: .85 }] },
-      options: baseOpts({ bars: true, points: pts, isMonth }),
+      data: { labels, datasets: [
+        { label: "ช่วง", data: pts.map(p => [num(p.hum_min), num(p.hum_max)]),
+          backgroundColor: "rgba(14,165,233,.5)", borderRadius: 4, barPercentage: .72, categoryPercentage: .86, order: 2 },
+        { type: "line", label: "เฉลี่ย", data: pts.map(p => num(p.hum)), borderColor: COL.orange,
+          borderWidth: 2, pointRadius: 2.5, pointBackgroundColor: COL.orange, tension: .3, order: 1 } ] },
+      options: rangeOpts(pts, isMonth),
     });
   }
 }
@@ -233,6 +243,22 @@ function baseOpts(o) {
     };
   }
   return opt;
+}
+
+function rangeOpts(pts, isMonth) {
+  const t = chartTheme();
+  return {
+    responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+    plugins: { legend: { display: false }, tooltip: {
+      backgroundColor: t.tipBg, titleColor: t.tipFg, bodyColor: t.tipFg, padding: 11, cornerRadius: 10, displayColors: false,
+      callbacks: { label: (i) => i.dataset.type === "line"
+        ? "เฉลี่ย " + i.parsed.y + "%"
+        : "ช่วง " + i.raw[0] + "–" + i.raw[1] + "%" } } },
+    scales: {
+      x: { grid: { display: false }, ticks: { color: t.tick, maxRotation: 0, autoSkip: true, maxTicksLimit: isMonth ? 12 : 16, font: { size: 10 } } },
+      y: { min: 30, max: 100, grid: { color: t.grid }, ticks: { color: t.tick, stepSize: 10, callback: (v) => v + "%" } },
+    },
+  };
 }
 
 function drawTable(data) {
@@ -303,6 +329,51 @@ function drawDist(data) {
     return `<div class="lv"><span class="sw" style="background:${o[3]}"></span>
       <span class="tx">${o[1]}<small>${o[2]}</small></span><span class="pct" style="color:${o[3]}">${pct}%</span></div>`;
   }).join("");
+}
+
+/* ---------- heatmap (day x hour), drawn with a CSS grid ---------- */
+function heatColor(t) { // 0 = dry (yellow) -> 1 = very humid (deep purple)
+  const s = [[253,231,37],[122,209,81],[34,168,132],[42,120,142],[65,68,135],[68,1,84]];
+  t = Math.max(0, Math.min(1, t));
+  const f = t * (s.length - 1), i = Math.floor(f), fr = f - i;
+  const a = s[i], b = s[Math.min(i + 1, s.length - 1)];
+  const c = (k) => Math.round(a[k] + (b[k] - a[k]) * fr);
+  return `rgb(${c(0)},${c(1)},${c(2)})`;
+}
+const HEAT_GRAD = "linear-gradient(90deg,rgb(253,231,37),rgb(122,209,81),rgb(34,168,132),rgb(42,120,142),rgb(65,68,135),rgb(68,1,84))";
+function drawHeat(data) {
+  const wrap = el("heatWrap");
+  if (!wrap) return;
+  const rowsData = data.heat || [];
+  const map = new Map();
+  let mn = Infinity, mx = -Infinity;
+  for (const r of rowsData) {
+    const d = r.d, h = num(r.h), v = num(r.v);
+    if (v == null) continue;
+    if (!map.has(d)) map.set(d, new Array(24).fill(null));
+    map.get(d)[h] = v;
+    if (v < mn) mn = v; if (v > mx) mx = v;
+  }
+  if (!map.size) { wrap.innerHTML = `<div class="note" style="padding:18px 0">ไม่มีข้อมูลพอสำหรับช่วงนี้</div>`; return; }
+  const span = (mx - mn) || 1;
+  const isMonth = data.grain === "month";
+  const lab = (d) => isMonth ? TH_MON[Number(d.slice(5, 7)) - 1]
+    : Number(d.slice(8, 10)) + " " + TH_MON[Number(d.slice(5, 7)) - 1];
+  let html = `<div class="heatgrid">`;
+  for (const [d, arr] of map) {
+    html += `<div class="hl">${lab(d)}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const v = arr[h];
+      html += v == null
+        ? `<div class="hc empty"></div>`
+        : `<div class="hc" style="background:${heatColor((v - mn) / span)}" title="${lab(d)} ${h}:00 น. — ${v}%"></div>`;
+    }
+  }
+  html += `<div class="hl"></div>`;
+  for (let h = 0; h < 24; h++) html += `<div class="hx">${h % 3 === 0 ? h : ""}</div>`;
+  html += `</div>`;
+  html += `<div class="heatlegend"><span>${Math.round(mn)}%</span><i style="background:${HEAT_GRAD}"></i><span>${Math.round(mx)}%</span></div>`;
+  wrap.innerHTML = html;
 }
 
 /* ---------- init ---------- */

@@ -72,7 +72,27 @@ export default async (req) => {
       WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})`)[0];
 
-    return json({ range, date, start, end, grain, label, summary, points, hourly, dist });
+    // day x hour matrix for the heatmap (per day for week/month, per month for year)
+    let heat = [];
+    if (grain === "day") {
+      heat = await sql`
+        SELECT to_char(date_trunc('day', ts), 'YYYY-MM-DD') AS d, extract(hour from ts)::int AS h,
+          round(avg(hum)::numeric, 1) AS v
+        FROM readings
+        WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
+          AND (${device}::text IS NULL OR device_mac = ${device})
+        GROUP BY 1, 2 ORDER BY 1, 2`;
+    } else if (grain === "month") {
+      heat = await sql`
+        SELECT to_char(date_trunc('month', ts), 'YYYY-MM') AS d, extract(hour from ts)::int AS h,
+          round(avg(hum)::numeric, 1) AS v
+        FROM readings
+        WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
+          AND (${device}::text IS NULL OR device_mac = ${device})
+        GROUP BY 1, 2 ORDER BY 1, 2`;
+    }
+
+    return json({ range, date, start, end, grain, label, summary, points, hourly, dist, heat });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

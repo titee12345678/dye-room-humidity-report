@@ -10,14 +10,14 @@
   --ink:#13213d; --ink2:#37486a; --muted:#5d6b86; --faint:#8593ad;
   --line:rgba(120,140,180,.20);
   /* glass recipe */
-  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.62),rgba(255,255,255,.34));
-  --glass-bg-soft:linear-gradient(135deg,rgba(255,255,255,.46),rgba(255,255,255,.20));
-  --glass-border:rgba(255,255,255,.66);
-  --glass-hi:rgba(255,255,255,.75);
+  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.44),rgba(255,255,255,.20));
+  --glass-bg-soft:linear-gradient(135deg,rgba(255,255,255,.30),rgba(255,255,255,.11));
+  --glass-border:rgba(255,255,255,.7);
+  --glass-hi:rgba(255,255,255,.8);
   --glass-shadow:0 18px 50px rgba(31,45,90,.12);
   --glass-shadow-lg:0 30px 80px rgba(31,45,90,.18);
-  --blur:blur(22px) saturate(185%);
-  --blur-strong:blur(30px) saturate(195%);
+  --blur:blur(28px) saturate(195%);
+  --blur-strong:blur(36px) saturate(205%);
   /* accent (violet -> indigo -> cyan) */
   --a1:#8b5cf6; --a2:#6366f1; --a3:#06b6d4; --accent:#6366f1;
   --accent-grad:linear-gradient(135deg,#8b5cf6,#6366f1,#06b6d4);
@@ -39,9 +39,9 @@
   --orb-violet:rgba(139,92,246,.24); --orb-cyan:rgba(34,211,238,.18); --orb-indigo:rgba(79,70,229,.22);
   --ink:#e9f1ff; --ink2:#c4d0e8; --muted:#94a6c4; --faint:#6f819f;
   --line:rgba(148,163,184,.18);
-  --glass-bg:linear-gradient(135deg,rgba(34,46,72,.58),rgba(15,23,42,.32));
-  --glass-bg-soft:linear-gradient(135deg,rgba(30,41,64,.42),rgba(15,23,42,.20));
-  --glass-border:rgba(148,163,184,.22);
+  --glass-bg:linear-gradient(135deg,rgba(34,46,72,.42),rgba(15,23,42,.20));
+  --glass-bg-soft:linear-gradient(135deg,rgba(30,41,64,.28),rgba(15,23,42,.12));
+  --glass-border:rgba(148,163,184,.26);
   --glass-hi:rgba(255,255,255,.14);
   --glass-shadow:0 22px 60px rgba(0,0,0,.46);
   --glass-shadow-lg:0 34px 90px rgba(0,0,0,.55);

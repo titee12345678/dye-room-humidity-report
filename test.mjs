@@ -1,6 +1,7 @@
 // Smoke tests for the pure logic (no DB / no server needed). Run: npm test
 import { parseText, decodeBuffer } from "./public/parse.js";
 import { resolvePeriod } from "./shared/period.js";
+import { analyzeAgreement } from "./shared/agreement.js";
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra = "") {
@@ -62,6 +63,73 @@ console.log("resolvePeriod — day/week/month/year");
   eq("year start", y.start, "2026-01-01 00:00:00");
   eq("year end", y.end, "2027-01-01 00:00:00");
   eq("year grain", y.grain, "month");
+}
+
+console.log("analyzeAgreement — humidity, good agreement (2 devices)");
+{
+  const series = [
+    { mac: "A", t: "d1", hum: 58 }, { mac: "B", t: "d1", hum: 57 },
+    { mac: "A", t: "d2", hum: 60 }, { mac: "B", t: "d2", hum: 58 },
+    { mac: "A", t: "d3", hum: 59 }, { mac: "B", t: "d3", hum: 60 },
+  ];
+  const devices = [{ mac: "A", hum: { avg: 59 } }, { mac: "B", hum: { avg: 58.3 } }];
+  const r = analyzeAgreement(series, devices, "hum", { good: 3, bad: 6 });
+  eq("gapMax", r.gapMax, 2);
+  eq("gapAvg", r.gapAvg, 1.3);
+  eq("level good", r.level, "good");
+  eq("no outlier (2 devices)", r.outlier, null);
+}
+
+console.log("analyzeAgreement — one device reads far off (3 devices)");
+{
+  const series = [
+    { mac: "A", t: "t1", hum: 58 }, { mac: "B", t: "t1", hum: 57 }, { mac: "C", t: "t1", hum: 70 },
+  ];
+  const devices = [
+    { mac: "A", hum: { avg: 58 } }, { mac: "B", hum: { avg: 57 } }, { mac: "C", hum: { avg: 70 } },
+  ];
+  const r = analyzeAgreement(series, devices, "hum", { good: 3, bad: 6 });
+  eq("gapMax", r.gapMax, 13);
+  eq("level bad", r.level, "bad");
+  eq("outlier = C", r.outlier, "C");
+}
+
+console.log("analyzeAgreement — exact gaps + 2-device never flags outlier");
+{
+  const series = [
+    { mac: "A", t: "t1", temp: 30 }, { mac: "B", t: "t1", temp: 29 },
+    { mac: "A", t: "t2", temp: 31 }, { mac: "B", t: "t2", temp: 29 },
+  ];
+  const devices = [{ mac: "A", temp: { avg: 30.5 } }, { mac: "B", temp: { avg: 29 } }];
+  const r = analyzeAgreement(series, devices, "temp", { good: 0.5, bad: 1.5 });
+  eq("gapAvg", r.gapAvg, 1.5);
+  eq("gapMax", r.gapMax, 2);
+  eq("level bad", r.level, "bad");
+  eq("no outlier (2 devices)", r.outlier, null);
+}
+
+console.log("analyzeAgreement — single device → 'single'");
+{
+  const series = [{ mac: "A", t: "t1", hum: 50 }, { mac: "A", t: "t2", hum: 51 }];
+  const devices = [{ mac: "A", hum: { avg: 50.5 } }];
+  const r = analyzeAgreement(series, devices, "hum", { good: 3, bad: 6 });
+  eq("level single", r.level, "single");
+  eq("gapAvg null", r.gapAvg, null);
+  eq("gapMax null", r.gapMax, null);
+  eq("outlier null", r.outlier, null);
+}
+
+console.log("analyzeAgreement — buckets with only one device are skipped");
+{
+  const series = [
+    { mac: "A", t: "t1", hum: 50 }, { mac: "B", t: "t1", hum: 52 }, // gap 2
+    { mac: "A", t: "t2", hum: 50 },                                 // skipped (1 device)
+    { mac: "A", t: "t3", hum: 51 }, { mac: "B", t: "t3", hum: 50 }, // gap 1
+  ];
+  const devices = [{ mac: "A", hum: { avg: 50.3 } }, { mac: "B", hum: { avg: 51 } }];
+  const r = analyzeAgreement(series, devices, "hum", { good: 3, bad: 6 });
+  eq("gapAvg over 2 buckets", r.gapAvg, 1.5);
+  eq("gapMax", r.gapMax, 2);
 }
 
 console.log(`\n${fail === 0 ? "✅ PASS" : "❌ FAIL"} — ${pass} passed, ${fail} failed`);

@@ -199,6 +199,16 @@ section{margin-top:18px}
 .heatlegend{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:14px;font-size:11px;color:var(--muted)}
 .heatlegend i{width:130px;height:9px;border-radius:5px;display:inline-block}
 
+/* heatmap cell tooltip (hover desktop / tap mobile) — shared by dashboard + compare */
+.cmptip{position:fixed;z-index:50;pointer-events:none;font-size:12px;line-height:1.5;
+  padding:9px 12px;border-radius:11px;max-width:210px;
+  background:var(--chart-tooltip-bg);color:var(--chart-tooltip-fg);box-shadow:0 12px 32px rgba(0,0,0,.34)}
+.cmptip[hidden]{display:none}
+.cmptip b{font-weight:700}
+.cmptip .tw{opacity:.82;font-size:11px;margin:1px 0 5px}
+.cmptip .tv{display:flex;align-items:center;gap:6px;margin-top:1px}
+.cmptip .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:0 0 auto}
+
 /* ---- table ---- */
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:14px;border-radius:12px}
 table{border-collapse:collapse;width:100%;min-width:380px;font-size:13.5px}

@@ -366,7 +366,7 @@ function drawHeat(data) {
       const v = arr[h];
       html += v == null
         ? `<div class="hc empty"></div>`
-        : `<div class="hc" style="background:${heatColor((v - mn) / span)}" title="${lab(d)} ${h}:00 น. — ${v}%"></div>`;
+        : `<div class="hc" style="background:${heatColor((v - mn) / span)}" data-d="${d}" data-h="${h}"></div>`;
     }
   }
   html += `<div class="hl"></div>`;
@@ -374,7 +374,43 @@ function drawHeat(data) {
   html += `</div>`;
   html += `<div class="heatlegend"><span>${Math.round(mn)}%</span><i style="background:${HEAT_GRAD}"></i><span>${Math.round(mx)}%</span></div>`;
   wrap.innerHTML = html;
+  heatInfo = { map, lab }; // expose for the hover/tap tooltip
 }
+
+/* ---------- heatmap tooltip (point/tap a cell → show its humidity) ---------- */
+let heatInfo = null;
+const heatTip = document.getElementById("heatTip");
+function heatTipHtml(cell) {
+  if (!heatInfo) return "";
+  const d = cell.dataset.d, h = Number(cell.dataset.h);
+  const arr = heatInfo.map.get(d), v = arr ? arr[h] : null;
+  const inf = v == null ? null : humInfo(v);
+  return `<b>${heatInfo.lab(d)} · ${pad(h)}:00 น.</b>
+    <div class="tv"><span class="dot" style="background:${inf ? inf.c : "#888"}"></span>💧 ความชื้น <b>${v == null ? "—" : v + "%"}</b>${inf ? " (" + inf.label + ")" : ""}</div>`;
+}
+function showHeatTip(x, y, cell) {
+  if (!heatTip) return;
+  heatTip.innerHTML = heatTipHtml(cell);
+  heatTip.hidden = false;
+  const p = 10, tw = heatTip.offsetWidth, th = heatTip.offsetHeight;
+  let nx = x + 14, ny = y + 14;
+  if (nx + tw + p > window.innerWidth) nx = x - tw - 14;
+  if (ny + th + p > window.innerHeight) ny = y - th - 14;
+  heatTip.style.left = Math.max(p, nx) + "px";
+  heatTip.style.top = Math.max(p, ny) + "px";
+}
+function hideHeatTip() { if (heatTip) heatTip.hidden = true; }
+const heatCellUnder = (e) => (e.target.closest ? e.target.closest("#heatWrap .hc[data-d]") : null);
+document.addEventListener("pointermove", (e) => {
+  const c = heatCellUnder(e);
+  if (c) showHeatTip(e.clientX, e.clientY, c);
+  else if (heatTip && !heatTip.hidden) hideHeatTip();
+});
+document.addEventListener("pointerdown", (e) => { // tap on touch / click on desktop
+  const c = heatCellUnder(e);
+  if (c) { showHeatTip(e.clientX, e.clientY, c); e.preventDefault(); } else hideHeatTip();
+});
+document.addEventListener("scroll", hideHeatTip, true);
 
 /* ---------- init ---------- */
 function setRange(r) {

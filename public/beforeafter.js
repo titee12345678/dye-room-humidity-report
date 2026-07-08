@@ -123,7 +123,7 @@ function draw(A, B, days) {
     <div class="card pad" style="padding:14px">
       <div class="chart-head" style="padding:0 4px 4px"><div class="chart-title">ตารางเทียบรายวัน</div>
         <div class="chart-sub">Δ ติดลบ = ความชื้นลดลง (ดีขึ้น) · A เริ่ม ${fmtThai(A.start)} · B เริ่ม ${fmtThai(B.start)}</div></div>
-      <div class="table-scroll"><table><thead><tr><th>วัน</th><th>ก่อน (A)</th><th>หลัง (B)</th><th>Δ</th></tr></thead><tbody>${trows}</tbody></table></div>
+      <div class="table-scroll"><table><thead><tr><th>วัน</th><th>(A) ก่อนติดพัดลม</th><th>(B) หลังติดพัดลม</th><th>Δ</th></tr></thead><tbody>${trows}</tbody></table></div>
     </div>` : "";
 
   el("baContent").innerHTML = `
@@ -141,7 +141,7 @@ function draw(A, B, days) {
       <div class="chart-head"><div class="chart-title">ความชื้นเฉลี่ยรายวัน — ซ้อนทับ ก่อน vs หลัง</div>
         <div class="chart-sub">แกน = วันที่นับจากวันเริ่มของแต่ละช่วง</div></div>
       <div class="chart-box"><canvas id="baChart"></canvas></div>
-      <div class="ba-legend"><span><i style="background:repeating-linear-gradient(90deg,${BEFORE} 0 6px,transparent 6px 10px)"></i>ก่อน (A)</span><span><i style="background:${AFTER}"></i>หลัง (B)</span></div>
+      <div class="ba-legend"><span><i style="background:repeating-linear-gradient(90deg,${BEFORE} 0 6px,transparent 6px 10px)"></i>(A) ก่อนติดพัดลม</span><span><i style="background:${AFTER}"></i>(B) หลังติดพัดลม</span></div>
     </div>
     ${tableCard}`;
 
@@ -152,8 +152,8 @@ function draw(A, B, days) {
   charts.push(new Chart(el("baChart"), {
     type: "line",
     data: { labels, datasets: [
-      { label: "ก่อน (A)", data: aA, borderColor: BEFORE, backgroundColor: BEFORE, borderWidth: 2.5, borderDash: [6, 4], tension: .3, pointRadius: 2, spanGaps: true },
-      { label: "หลัง (B)", data: aB, borderColor: AFTER, backgroundColor: AFTER, borderWidth: 2.5, tension: .3, pointRadius: 2, spanGaps: true },
+      { label: "(A) ก่อนติดพัดลม", data: aA, borderColor: BEFORE, backgroundColor: BEFORE, borderWidth: 2.5, borderDash: [6, 4], tension: .3, pointRadius: 2, spanGaps: true },
+      { label: "(B) หลังติดพัดลม", data: aB, borderColor: AFTER, backgroundColor: AFTER, borderWidth: 2.5, tension: .3, pointRadius: 2, spanGaps: true },
     ] },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },

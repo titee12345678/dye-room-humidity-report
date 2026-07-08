@@ -12,7 +12,10 @@
 <script src="chart.umd.min.js"></script>
 <style>
   /* before/after-only bits — kept here so the shared design system stays untouched */
-  :root{--before:#6366f1;--after:#ea580c}
+  /* before = red, after = green (CVD-validated per mode; the chart also dashes
+     the "before" line as a secondary cue since red/green is a hard pair). */
+  :root{--before:#dc2626;--after:#16a34a}
+  [data-theme="dark"]{--before:#ef4444;--after:#059669}
   .ba-controls{display:grid;gap:12px}
   .presetbtn{width:100%;font-family:inherit;font-size:14px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.3);
     padding:13px;border-radius:14px;cursor:pointer;background:var(--accent-grad);
@@ -45,6 +48,9 @@
   .ba-legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
   .ba-legend span{display:inline-flex;align-items:center;gap:6px}
   .ba-legend i{width:16px;height:4px;border-radius:2px}
+  .badelta{font-weight:700}
+  .badelta.dn{color:#16a34a} .badelta.up{color:#dc2626} .badelta.mut{color:var(--faint);font-weight:500}
+  [data-theme="dark"] .badelta.dn{color:#34d399} [data-theme="dark"] .badelta.up{color:#f87171}
 </style>
 </head>
 <body>
@@ -65,7 +71,7 @@
   </div>
 
   <div class="card pad ba-controls">
-    <button class="presetbtn" id="baPreset" type="button">🌀 พรีเซ็ต: ก่อน/หลังติดพัดลม (เสาร์ 27 ก.ค. 2569)</button>
+    <button class="presetbtn" id="baPreset" type="button">🌀 พรีเซ็ต: ก่อน/หลังติดพัดลม (29 ก.ค. 2569)</button>
     <div class="ba-field">
       <label for="baDays">ความยาวของแต่ละช่วง</label>
       <select id="baDays" class="ba-select">
@@ -88,7 +94,7 @@
 
   <div id="baContent"><div class="note"><div class="spin"></div></div></div>
 
-  <footer>ก่อน = อินดิโก · หลัง = ส้ม · ความชื้นลดลง = ดีต่อการเก็บสีย้อม</footer>
+  <footer>ก่อน = แดง (เส้นประ) · หลัง = เขียว · ความชื้นลดลง = ดีต่อการเก็บสีย้อม</footer>
 </div>
 <script type="module" src="beforeafter.js"></script>
 </body>

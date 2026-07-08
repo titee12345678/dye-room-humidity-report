@@ -1,7 +1,7 @@
 // Before/after comparison — pick two windows (e.g. before vs after installing a fan),
 // overlay their daily humidity, and show the change. Data via /api/window.
 const TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-const FAN_DATE = "2026-07-27"; // เสาร์ 27 ก.ค. 2569 — วันติดพัดลม
+const FAN_DATE = "2026-07-29"; // 29 ก.ค. 2569 — วันติดพัดลม
 const el = (id) => document.getElementById(id);
 const num = (v) => (v == null ? null : Number(v));
 const pad = (n) => String(n).padStart(2, "0");
@@ -95,6 +95,37 @@ function draw(A, B, days) {
       <span class="delta ${cls}">${txt}</span></div>`;
   };
 
+  // align each window's daily avg onto offset 0..days-1 (shared by chart + table)
+  const arrFor = (W) => {
+    const a = new Array(days).fill(null);
+    for (const r of (W.series || [])) {
+      const off = daysBetween(r.t, W.start);
+      if (off >= 0 && off < days) a[off] = num(r.hum);
+    }
+    return a;
+  };
+  const aA = arrFor(A), aB = arrFor(B);
+
+  // daily before-vs-after comparison table
+  let trows = "";
+  for (let i = 0; i < days; i++) {
+    const a = aA[i], b = aB[i];
+    if (a == null && b == null) continue;
+    const dd = (a != null && b != null) ? Math.round((b - a) * 10) / 10 : null;
+    const cls = dd == null ? "mut" : dd <= -0.1 ? "dn" : dd >= 0.1 ? "up" : "mut";
+    const dtxt = dd == null ? "—" : (dd > 0 ? "+" : "") + dd;
+    trows += `<tr><td>วันที่ ${i + 1}</td>
+      <td style="color:var(--before)">${a == null ? "—" : a + "%"}</td>
+      <td style="color:var(--after)">${b == null ? "—" : b + "%"}</td>
+      <td class="badelta ${cls}">${dtxt}</td></tr>`;
+  }
+  const tableCard = trows ? `
+    <div class="card pad" style="padding:14px">
+      <div class="chart-head" style="padding:0 4px 4px"><div class="chart-title">ตารางเทียบรายวัน</div>
+        <div class="chart-sub">Δ ติดลบ = ความชื้นลดลง (ดีขึ้น) · A เริ่ม ${fmtThai(A.start)} · B เริ่ม ${fmtThai(B.start)}</div></div>
+      <div class="table-scroll"><table><thead><tr><th>วัน</th><th>ก่อน (A)</th><th>หลัง (B)</th><th>Δ</th></tr></thead><tbody>${trows}</tbody></table></div>
+    </div>` : "";
+
   el("baContent").innerHTML = `
     <div class="ba-verdict" style="background:${vGrad}">
       <div class="vlabel">A · ${fmtThai(A.start)} ถึง ${fmtThai(addDays(A.start, days - 1))} &nbsp;|&nbsp; B · ${fmtThai(B.start)} ถึง ${fmtThai(addDays(B.start, days - 1))}</div>
@@ -110,18 +141,10 @@ function draw(A, B, days) {
       <div class="chart-head"><div class="chart-title">ความชื้นเฉลี่ยรายวัน — ซ้อนทับ ก่อน vs หลัง</div>
         <div class="chart-sub">แกน = วันที่นับจากวันเริ่มของแต่ละช่วง</div></div>
       <div class="chart-box"><canvas id="baChart"></canvas></div>
-      <div class="ba-legend"><span><i style="background:${BEFORE}"></i>ก่อน (A)</span><span><i style="background:${AFTER}"></i>หลัง (B)</span></div>
-    </div>`;
+      <div class="ba-legend"><span><i style="background:repeating-linear-gradient(90deg,${BEFORE} 0 6px,transparent 6px 10px)"></i>ก่อน (A)</span><span><i style="background:${AFTER}"></i>หลัง (B)</span></div>
+    </div>
+    ${tableCard}`;
 
-  // align each window's daily avg onto offset 0..days-1
-  const arrFor = (W) => {
-    const a = new Array(days).fill(null);
-    for (const r of (W.series || [])) {
-      const off = daysBetween(r.t, W.start);
-      if (off >= 0 && off < days) a[off] = num(r.hum);
-    }
-    return a;
-  };
   const labels = Array.from({ length: days }, (_, i) => "วันที่ " + (i + 1));
   const t = { grid: cssVar("--chart-grid", "rgba(19,33,61,.07)"), tick: cssVar("--chart-tick", "#5d6b86"),
     tipBg: cssVar("--chart-tooltip-bg", "rgba(15,23,42,.92)"), tipFg: cssVar("--chart-tooltip-fg", "#f1f5f9") };
@@ -129,8 +152,8 @@ function draw(A, B, days) {
   charts.push(new Chart(el("baChart"), {
     type: "line",
     data: { labels, datasets: [
-      { label: "ก่อน (A)", data: arrFor(A), borderColor: BEFORE, backgroundColor: BEFORE, borderWidth: 2.5, tension: .3, pointRadius: 2, spanGaps: true },
-      { label: "หลัง (B)", data: arrFor(B), borderColor: AFTER, backgroundColor: AFTER, borderWidth: 2.5, tension: .3, pointRadius: 2, spanGaps: true },
+      { label: "ก่อน (A)", data: aA, borderColor: BEFORE, backgroundColor: BEFORE, borderWidth: 2.5, borderDash: [6, 4], tension: .3, pointRadius: 2, spanGaps: true },
+      { label: "หลัง (B)", data: aB, borderColor: AFTER, backgroundColor: AFTER, borderWidth: 2.5, tension: .3, pointRadius: 2, spanGaps: true },
     ] },
     options: {
       responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },

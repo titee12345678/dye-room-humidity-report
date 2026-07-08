@@ -92,7 +92,7 @@ a{color:var(--accent);text-decoration:none;font-weight:600}
 
 /* ---- top bar ---- */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
-.top-actions{display:flex;align-items:center;gap:8px}
+.top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .brand{display:flex;align-items:center;gap:10px;color:var(--ink2);font-weight:600;font-size:14px}
 .brand .ic{width:32px;height:32px;border-radius:11px;background:var(--accent-grad);
   display:grid;place-items:center;color:#fff;font-size:16px;

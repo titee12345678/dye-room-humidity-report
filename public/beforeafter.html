@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>เทียบก่อน/หลัง · ห้องเก็บสีย้อม</title>
+<script src="theme.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai+Looped:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="chart.umd.min.js"></script>
+<style>
+  /* before/after-only bits — kept here so the shared design system stays untouched */
+  :root{--before:#6366f1;--after:#ea580c}
+  .ba-controls{display:grid;gap:12px}
+  .presetbtn{width:100%;font-family:inherit;font-size:14px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.3);
+    padding:13px;border-radius:14px;cursor:pointer;background:var(--accent-grad);
+    box-shadow:0 10px 26px var(--accent-glow),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .18s}
+  .presetbtn:active{transform:scale(.99)}
+  .ba-row{display:flex;gap:10px}
+  .ba-field{flex:1;display:flex;flex-direction:column;gap:6px;min-width:0}
+  .ba-field label{font-size:12.5px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:6px}
+  .ba-field .dotb{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+  .ba-field input[type=date],.ba-select{font-family:inherit;font-size:14.5px;font-weight:600;color:var(--ink);
+    padding:10px 12px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-soft);
+    -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);outline:none;color-scheme:light dark;width:100%}
+  .ba-verdict{margin-top:16px;border-radius:var(--r);padding:18px 20px;color:#fff;position:relative;overflow:hidden;
+    box-shadow:var(--glass-shadow-lg),inset 0 1px 0 rgba(255,255,255,.4)}
+  .ba-verdict .vlabel{font-size:12.5px;font-weight:600;opacity:.92}
+  .ba-verdict .vbig{font-size:23px;font-weight:700;line-height:1.2;margin-top:2px}
+  .ba-verdict .vsub{font-size:14px;opacity:.96;margin-top:8px}
+  .ba-tiles{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+  .ba-tile{border-radius:16px;padding:13px 16px;background:var(--glass-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+    border:1px solid var(--glass-border);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .ba-tile .lab{font-size:13px;color:var(--muted);font-weight:600;flex:1;min-width:110px}
+  .ba-tile .ab{font-weight:700;font-size:15.5px;white-space:nowrap}
+  .ba-tile .ab .a{color:var(--before)} .ba-tile .ab .b{color:var(--after)}
+  .ba-tile .ab .arr{color:var(--faint);margin:0 6px;font-weight:600}
+  .ba-tile .delta{font-weight:700;font-size:13.5px;padding:3px 10px;border-radius:999px}
+  .ba-tile .delta.good{background:var(--ok-bg);color:var(--ok-fg)}
+  .ba-tile .delta.bad{background:var(--err-bg);color:var(--err-fg)}
+  .ba-tile .delta.flat{background:rgba(127,150,200,.16);color:var(--muted)}
+  .ba-legend{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:10px;font-size:12.5px;color:var(--muted)}
+  .ba-legend span{display:inline-flex;align-items:center;gap:6px}
+  .ba-legend i{width:16px;height:4px;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand"><span class="ic">🎨</span> ห้องเก็บสีย้อม</div>
+    <div class="top-actions">
+      <button class="navbtn theme-toggle" type="button" aria-label="สลับโหมดสว่าง/มืด"><span data-theme-icon>🌙</span></button>
+      <a class="navbtn" href="index.html">← แดชบอร์ด</a>
+    </div>
+  </div>
+  <h1>เทียบก่อน / หลัง</h1>
+  <div class="dates">เปรียบเทียบความชื้น 2 ช่วงเวลา เช่น <b>ก่อน–หลังติดพัดลม</b> เพื่อดูว่าดีขึ้นไหม</div>
+
+  <div class="devrow" id="devRow" style="display:none">
+    <span class="devlab">📟 เครื่อง</span>
+    <select id="baDev" class="devsel"></select>
+  </div>
+
+  <div class="card pad ba-controls">
+    <button class="presetbtn" id="baPreset" type="button">🌀 พรีเซ็ต: ก่อน/หลังติดพัดลม (เสาร์ 27 ก.ค. 2569)</button>
+    <div class="ba-field">
+      <label for="baDays">ความยาวของแต่ละช่วง</label>
+      <select id="baDays" class="ba-select">
+        <option value="7">7 วัน</option>
+        <option value="14" selected>14 วัน</option>
+        <option value="30">30 วัน</option>
+      </select>
+    </div>
+    <div class="ba-row">
+      <div class="ba-field">
+        <label for="baA"><span class="dotb" style="background:var(--before)"></span> ช่วง A · ก่อน (วันเริ่ม)</label>
+        <input type="date" id="baA">
+      </div>
+      <div class="ba-field">
+        <label for="baB"><span class="dotb" style="background:var(--after)"></span> ช่วง B · หลัง (วันเริ่ม)</label>
+        <input type="date" id="baB">
+      </div>
+    </div>
+  </div>
+
+  <div id="baContent"><div class="note"><div class="spin"></div></div></div>
+
+  <footer>ก่อน = อินดิโก · หลัง = ส้ม · ความชื้นลดลง = ดีต่อการเก็บสีย้อม</footer>
+</div>
+<script type="module" src="beforeafter.js"></script>
+</body>
+</html>

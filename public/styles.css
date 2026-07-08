@@ -1,23 +1,26 @@
 /* =========================================================================
-   Premium Liquid Glass design system — light + dark
+   Mirror Glass 3D design system — light + dark
+   Polished reflective surfaces with a raised 3D bevel and floating depth.
    Tokens first, then components. Every selector the markup/JS uses is kept.
    ========================================================================= */
 :root{
   /* atmosphere */
-  --bg-1:#f4f8ff; --bg-2:#eaf0ff; --bg-3:#f6f1ff;
-  --orb-violet:rgba(168,85,247,.20); --orb-cyan:rgba(56,189,248,.22); --orb-indigo:rgba(99,102,241,.18);
+  --bg-1:#eef2f9; --bg-2:#e3e9f2; --bg-3:#eef1f7;
+  --orb-violet:rgba(168,85,247,.16); --orb-cyan:rgba(56,189,248,.18); --orb-indigo:rgba(99,102,241,.14);
+  --sheen:rgba(255,255,255,.85);
   /* ink */
   --ink:#13213d; --ink2:#37486a; --muted:#5d6b86; --faint:#8593ad;
   --line:rgba(120,140,180,.20);
-  /* glass recipe */
-  --glass-bg:linear-gradient(135deg,rgba(255,255,255,.44),rgba(255,255,255,.20));
-  --glass-bg-soft:linear-gradient(135deg,rgba(255,255,255,.30),rgba(255,255,255,.11));
-  --glass-border:rgba(255,255,255,.7);
-  --glass-hi:rgba(255,255,255,.8);
-  --glass-shadow:0 18px 50px rgba(31,45,90,.12);
-  --glass-shadow-lg:0 30px 80px rgba(31,45,90,.18);
-  --blur:blur(28px) saturate(195%);
-  --blur-strong:blur(36px) saturate(205%);
+  /* mirror recipe — polished reflective surface + 3D bevel */
+  --glass-bg:linear-gradient(145deg,#ffffff 0%,#e6ecf5 30%,#f8fbfe 47%,#dbe4ef 72%,#eef3f9 100%);
+  --glass-bg-soft:linear-gradient(145deg,#fcfdff 0%,#e8eef7 60%,#f3f7fb 100%);
+  --glass-border:rgba(255,255,255,.95);
+  --glass-hi:rgba(255,255,255,.95);
+  --glass-shadow:0 2px 4px rgba(20,33,61,.09),0 16px 32px rgba(20,33,61,.16);
+  --glass-shadow-lg:0 4px 10px rgba(20,33,61,.12),0 30px 62px rgba(20,33,61,.26);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -16px 26px -16px rgba(20,33,61,.18);
+  --specular:linear-gradient(125deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.4) 7%,rgba(255,255,255,0) 24%);
+  --blur:blur(3px);--blur-strong:blur(6px);
   /* accent (violet -> indigo -> cyan) */
   --a1:#8b5cf6; --a2:#6366f1; --a3:#06b6d4; --accent:#6366f1;
   --accent-grad:linear-gradient(135deg,#8b5cf6,#6366f1,#06b6d4);
@@ -35,16 +38,19 @@
   --r:22px; --r-sm:14px; --r-pill:999px;
 }
 [data-theme="dark"]{
-  --bg-1:#060a16; --bg-2:#0a1124; --bg-3:#0a0f20;
-  --orb-violet:rgba(139,92,246,.24); --orb-cyan:rgba(34,211,238,.18); --orb-indigo:rgba(79,70,229,.22);
+  --bg-1:#0a1120; --bg-2:#070d18; --bg-3:#0a0f1c;
+  --orb-violet:rgba(139,92,246,.20); --orb-cyan:rgba(34,211,238,.16); --orb-indigo:rgba(79,70,229,.20);
+  --sheen:rgba(130,160,225,.20);
   --ink:#e9f1ff; --ink2:#c4d0e8; --muted:#94a6c4; --faint:#6f819f;
   --line:rgba(148,163,184,.18);
-  --glass-bg:linear-gradient(135deg,rgba(34,46,72,.42),rgba(15,23,42,.20));
-  --glass-bg-soft:linear-gradient(135deg,rgba(30,41,64,.28),rgba(15,23,42,.12));
-  --glass-border:rgba(148,163,184,.26);
-  --glass-hi:rgba(255,255,255,.14);
-  --glass-shadow:0 22px 60px rgba(0,0,0,.46);
-  --glass-shadow-lg:0 34px 90px rgba(0,0,0,.55);
+  --glass-bg:linear-gradient(145deg,#27384f 0%,#0f1930 32%,#1c2942 48%,#0b1426 74%,#16223a 100%);
+  --glass-bg-soft:linear-gradient(145deg,#203049 0%,#0e1830 60%,#19253e 100%);
+  --glass-border:rgba(255,255,255,.16);
+  --glass-hi:rgba(255,255,255,.2);
+  --glass-shadow:0 2px 6px rgba(0,0,0,.5),0 20px 44px rgba(0,0,0,.62);
+  --glass-shadow-lg:0 4px 10px rgba(0,0,0,.55),0 34px 74px rgba(0,0,0,.72);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.24),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -16px 28px -18px rgba(0,0,0,.62);
+  --specular:linear-gradient(125deg,rgba(255,255,255,.36) 0%,rgba(255,255,255,.12) 7%,rgba(255,255,255,0) 24%);
   --accent-glow:rgba(124,107,255,.42);
   --good:#34d399; --warn:#fbbf24; --alert:#fb7185;
   --ok-bg:rgba(16,185,129,.16); --ok-fg:#6ee7b7; --ok-bd:rgba(16,185,129,.34);
@@ -60,10 +66,10 @@ body{
   color:var(--ink);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;
   overflow-x:hidden;min-height:100vh;position:relative;transition:color .3s;
   background:
-    radial-gradient(58% 48% at 12% 6%,var(--orb-violet),transparent 60%),
-    radial-gradient(54% 44% at 92% 2%,var(--orb-cyan),transparent 60%),
-    radial-gradient(70% 56% at 50% 110%,var(--orb-indigo),transparent 60%),
-    linear-gradient(150deg,var(--bg-1),var(--bg-2) 46%,var(--bg-3));
+    radial-gradient(95% 55% at 50% -14%,var(--sheen),transparent 62%),
+    radial-gradient(56% 42% at 88% 4%,var(--orb-cyan),transparent 62%),
+    radial-gradient(56% 44% at 8% 12%,var(--orb-violet),transparent 62%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-2) 55%,var(--bg-3));
   background-attachment:fixed;
 }
 /* floating ambient light — drifts slowly, atmosphere only */
@@ -80,15 +86,15 @@ body::before{
   padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}
 a{color:var(--accent);text-decoration:none;font-weight:600}
 
-/* ---- the glass surface, shared ---- */
+/* ---- the mirror surface, shared (reflection glint baked behind content) ---- */
 .card,.devrow,.rangebar,.pernav .arrow,.pernav .picker,.navbtn,.mrow,.zone,.result,.preview{
-  background:var(--glass-bg);
+  background:var(--specular),var(--glass-bg);
   -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
   border:1px solid var(--glass-border);
-  box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);
+  box-shadow:var(--glass-shadow),var(--bevel);
 }
-/* lighter glass for slim chrome controls */
-.navbtn,.devrow,.rangebar,.pernav .arrow,.pernav .picker{background:var(--glass-bg-soft)}
+/* lighter mirror for slim chrome controls */
+.navbtn,.devrow,.rangebar,.pernav .arrow,.pernav .picker{background:var(--specular),var(--glass-bg-soft)}
 
 /* ---- top bar ---- */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px}
@@ -166,8 +172,8 @@ section{margin-top:18px}
 /* ---- stat cards (glass + colored value) ---- */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .stat{padding:15px 14px;border-radius:17px;position:relative;overflow:hidden;
-  background:var(--glass-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
-  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi)}
+  background:var(--specular),var(--glass-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+  border:1px solid var(--glass-border);box-shadow:var(--glass-shadow),var(--bevel)}
 .stat::before{content:"";position:absolute;right:-24px;top:-24px;width:80px;height:80px;border-radius:50%;
   opacity:.5;filter:blur(8px);pointer-events:none}
 .stat.h::before{background:radial-gradient(circle,rgba(14,165,233,.5),transparent 70%)}
@@ -243,7 +249,7 @@ tbody tr:last-child td{border-bottom:none}
 .field label{font-size:13px;font-weight:600;color:var(--ink2);display:block;margin-bottom:6px}
 .field input[type=password],.field input[type=text]{width:100%;font-family:inherit;font-size:15px;padding:12px 14px;
   border:1px solid var(--glass-border);border-radius:12px;color:var(--ink);outline:none;
-  background:var(--glass-bg-soft);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);transition:.18s}
+  background:var(--specular),var(--glass-bg-soft);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);transition:.18s}
 .field input::placeholder{color:var(--faint)}
 .field input:focus{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-glow)}
 .btn{width:100%;font-family:inherit;font-size:15px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.3);

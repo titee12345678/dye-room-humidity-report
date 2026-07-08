@@ -26,7 +26,7 @@
   .ba-field label{font-size:12.5px;font-weight:600;color:var(--ink2);display:flex;align-items:center;gap:6px}
   .ba-field .dotb{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
   .ba-field input[type=date],.ba-select{font-family:inherit;font-size:14.5px;font-weight:600;color:var(--ink);
-    padding:10px 12px;border:1px solid var(--glass-border);border-radius:12px;background:var(--glass-bg-soft);
+    padding:10px 12px;border:1px solid var(--glass-border);border-radius:12px;background:var(--specular),var(--glass-bg-soft);
     -webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);outline:none;color-scheme:light dark;width:100%}
   .ba-verdict{margin-top:16px;border-radius:var(--r);padding:18px 20px;color:#fff;position:relative;overflow:hidden;
     box-shadow:var(--glass-shadow-lg),inset 0 1px 0 rgba(255,255,255,.4)}
@@ -34,8 +34,8 @@
   .ba-verdict .vbig{font-size:23px;font-weight:700;line-height:1.2;margin-top:2px}
   .ba-verdict .vsub{font-size:14px;opacity:.96;margin-top:8px}
   .ba-tiles{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
-  .ba-tile{border-radius:16px;padding:13px 16px;background:var(--glass-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
-    border:1px solid var(--glass-border);box-shadow:var(--glass-shadow),inset 0 1px 0 var(--glass-hi);
+  .ba-tile{border-radius:16px;padding:13px 16px;background:var(--specular),var(--glass-bg);-webkit-backdrop-filter:var(--blur);backdrop-filter:var(--blur);
+    border:1px solid var(--glass-border);box-shadow:var(--glass-shadow),var(--bevel);
     display:flex;align-items:center;gap:10px;flex-wrap:wrap}
   .ba-tile .lab{font-size:13px;color:var(--muted);font-weight:600;flex:1;min-width:110px}
   .ba-tile .ab{font-weight:700;font-size:15.5px;white-space:nowrap}

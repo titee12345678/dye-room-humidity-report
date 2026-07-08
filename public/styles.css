@@ -1,26 +1,26 @@
 /* =========================================================================
-   Mirror Glass 3D design system — light + dark
-   Polished reflective surfaces with a raised 3D bevel and floating depth.
-   Tokens first, then components. Every selector the markup/JS uses is kept.
+   Convex Clear Glass 3D design system — light + dark
+   Each card is a transparent convex lens: domed highlight arc, luminous rim,
+   inner curvature shading, floating depth. Tokens first, then components.
    ========================================================================= */
 :root{
   /* atmosphere */
-  --bg-1:#eef2f9; --bg-2:#e3e9f2; --bg-3:#eef1f7;
-  --orb-violet:rgba(168,85,247,.16); --orb-cyan:rgba(56,189,248,.18); --orb-indigo:rgba(99,102,241,.14);
-  --sheen:rgba(255,255,255,.85);
+  --bg-1:#f0f4fb; --bg-2:#e4ebf6; --bg-3:#f1eefa;
+  --orb-violet:rgba(168,85,247,.22); --orb-cyan:rgba(56,189,248,.24); --orb-indigo:rgba(99,102,241,.18);
+  --sheen:rgba(255,255,255,.8);
   /* ink */
   --ink:#13213d; --ink2:#37486a; --muted:#5d6b86; --faint:#8593ad;
   --line:rgba(120,140,180,.20);
-  /* mirror recipe — polished reflective surface + 3D bevel */
-  --glass-bg:linear-gradient(145deg,#ffffff 0%,#e6ecf5 30%,#f8fbfe 47%,#dbe4ef 72%,#eef3f9 100%);
-  --glass-bg-soft:linear-gradient(145deg,#fcfdff 0%,#e8eef7 60%,#f3f7fb 100%);
-  --glass-border:rgba(255,255,255,.95);
-  --glass-hi:rgba(255,255,255,.95);
-  --glass-shadow:0 2px 4px rgba(20,33,61,.09),0 16px 32px rgba(20,33,61,.16);
-  --glass-shadow-lg:0 4px 10px rgba(20,33,61,.12),0 30px 62px rgba(20,33,61,.26);
-  --bevel:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.45),inset 0 -16px 26px -16px rgba(20,33,61,.18);
-  --specular:linear-gradient(125deg,rgba(255,255,255,.92) 0%,rgba(255,255,255,.4) 7%,rgba(255,255,255,0) 24%);
-  --blur:blur(3px);--blur-strong:blur(6px);
+  /* convex clear-glass recipe — transparent lens with a domed highlight */
+  --glass-bg:linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.10) 58%,rgba(255,255,255,.20));
+  --glass-bg-soft:linear-gradient(180deg,rgba(255,255,255,.26),rgba(255,255,255,.08) 62%,rgba(255,255,255,.14));
+  --glass-border:rgba(255,255,255,.78);
+  --glass-hi:rgba(255,255,255,.9);
+  --glass-shadow:0 2px 6px rgba(31,45,90,.08),0 20px 42px rgba(31,45,90,.16);
+  --glass-shadow-lg:0 4px 10px rgba(31,45,90,.10),0 32px 66px rgba(31,45,90,.24);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.32),inset 0 16px 30px -14px rgba(255,255,255,.6),inset 0 -20px 32px -18px rgba(31,45,90,.20);
+  --specular:radial-gradient(92% 58% at 50% -16%,rgba(255,255,255,.85),rgba(255,255,255,0) 62%);
+  --blur:blur(16px) saturate(175%);--blur-strong:blur(24px) saturate(185%);
   /* accent (violet -> indigo -> cyan) */
   --a1:#8b5cf6; --a2:#6366f1; --a3:#06b6d4; --accent:#6366f1;
   --accent-grad:linear-gradient(135deg,#8b5cf6,#6366f1,#06b6d4);
@@ -38,19 +38,19 @@
   --r:22px; --r-sm:14px; --r-pill:999px;
 }
 [data-theme="dark"]{
-  --bg-1:#0a1120; --bg-2:#070d18; --bg-3:#0a0f1c;
-  --orb-violet:rgba(139,92,246,.20); --orb-cyan:rgba(34,211,238,.16); --orb-indigo:rgba(79,70,229,.20);
-  --sheen:rgba(130,160,225,.20);
+  --bg-1:#0a1122; --bg-2:#070d1a; --bg-3:#0b0f20;
+  --orb-violet:rgba(139,92,246,.26); --orb-cyan:rgba(34,211,238,.20); --orb-indigo:rgba(79,70,229,.24);
+  --sheen:rgba(130,160,225,.22);
   --ink:#e9f1ff; --ink2:#c4d0e8; --muted:#94a6c4; --faint:#6f819f;
   --line:rgba(148,163,184,.18);
-  --glass-bg:linear-gradient(145deg,#27384f 0%,#0f1930 32%,#1c2942 48%,#0b1426 74%,#16223a 100%);
-  --glass-bg-soft:linear-gradient(145deg,#203049 0%,#0e1830 60%,#19253e 100%);
-  --glass-border:rgba(255,255,255,.16);
-  --glass-hi:rgba(255,255,255,.2);
-  --glass-shadow:0 2px 6px rgba(0,0,0,.5),0 20px 44px rgba(0,0,0,.62);
-  --glass-shadow-lg:0 4px 10px rgba(0,0,0,.55),0 34px 74px rgba(0,0,0,.72);
-  --bevel:inset 0 1px 0 rgba(255,255,255,.24),inset 0 0 0 1px rgba(255,255,255,.06),inset 0 -16px 28px -18px rgba(0,0,0,.62);
-  --specular:linear-gradient(125deg,rgba(255,255,255,.36) 0%,rgba(255,255,255,.12) 7%,rgba(255,255,255,0) 24%);
+  --glass-bg:linear-gradient(180deg,rgba(56,78,122,.38),rgba(12,20,40,.22) 58%,rgba(34,50,84,.30));
+  --glass-bg-soft:linear-gradient(180deg,rgba(46,66,104,.30),rgba(12,20,40,.16) 62%,rgba(28,42,72,.24));
+  --glass-border:rgba(165,190,235,.32);
+  --glass-hi:rgba(255,255,255,.28);
+  --glass-shadow:0 2px 6px rgba(0,0,0,.45),0 20px 44px rgba(0,0,0,.55);
+  --glass-shadow-lg:0 4px 10px rgba(0,0,0,.5),0 34px 74px rgba(0,0,0,.66);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.34),inset 0 0 0 1px rgba(255,255,255,.09),inset 0 16px 30px -14px rgba(130,168,235,.28),inset 0 -20px 32px -18px rgba(0,0,0,.55);
+  --specular:radial-gradient(92% 58% at 50% -16%,rgba(255,255,255,.30),rgba(255,255,255,0) 62%);
   --accent-glow:rgba(124,107,255,.42);
   --good:#34d399; --warn:#fbbf24; --alert:#fb7185;
   --ok-bg:rgba(16,185,129,.16); --ok-fg:#6ee7b7; --ok-bd:rgba(16,185,129,.34);

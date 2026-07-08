@@ -1,7 +1,7 @@
 // Before/after comparison — pick two windows (e.g. before vs after installing a fan),
 // overlay their daily humidity, and show the change. Data via /api/window.
 const TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-const FAN_DATE = "2026-07-29"; // 29 ก.ค. 2569 — วันติดพัดลม
+const FAN_DATE = "2026-06-29"; // 29 มิ.ย. 2569 — วันติดพัดลม (เส้นแบ่ง ก่อน/หลัง)
 const el = (id) => document.getElementById(id);
 const num = (v) => (v == null ? null : Number(v));
 const pad = (n) => String(n).padStart(2, "0");
@@ -68,7 +68,10 @@ function draw(A, B, days) {
   // verdict (lower humidity after = better for dye storage)
   let vBig, vSub, vGrad;
   if (dHum == null) {
-    vBig = "มีข้อมูลไม่ครบทั้งสองช่วง"; vSub = `ก่อน ${nA ? "มีข้อมูล" : "ยังไม่มีข้อมูล"} · หลัง ${nB ? "มีข้อมูล" : "ยังไม่มีข้อมูล"}`;
+    vBig = "รอข้อมูลให้ครบทั้งสองช่วง";
+    vSub = (nA && !nB) ? `มีข้อมูล "ก่อนติดพัดลม" แล้ว · ยังไม่มีข้อมูล "หลังติดพัดลม" (ตั้งแต่ ${fmtThai(FAN_DATE)}) — อัปโหลดข้อมูลช่วงนั้นก่อน`
+      : (!nA && nB) ? `มีข้อมูล "หลังติดพัดลม" แล้ว · ยังไม่มีข้อมูล "ก่อนติดพัดลม"`
+      : `เลือกช่วงที่มีข้อมูลทั้งก่อนและหลัง`;
     vGrad = "linear-gradient(135deg,#64748b,#475569)";
   } else if (dHum <= -1) {
     vBig = `✅ ความชื้นลดลง ${Math.abs(dHum)}%`;
@@ -200,9 +203,10 @@ window.addEventListener("themechange", () => { if (last) draw(last.A, last.B, la
     const span = daysBetween(dv.max_date, dv.min_date) + 1;
     const days = span >= 60 ? 14 : 7;
     el("baDays").value = String(days);
-    el("baA").value = dv.min_date;
-    el("baB").value = addDays(dv.min_date, days);
-    el("baA").min = dv.min_date; el("baB").min = dv.min_date;
+    el("baA").value = dv.min_date;                 // before-fan baseline (existing data)
+    el("baB").value = FAN_DATE;                     // after-fan window starts at install date
+    el("baA").min = dv.min_date; el("baA").max = addDays(FAN_DATE, -1); // A must be before the fan
+    el("baB").min = FAN_DATE;                       // can't pick "after" before the fan was installed
     render();
   } catch (e) {
     el("baContent").innerHTML = `<div class="note"><div class="big">⚠️</div>เชื่อมต่อฐานข้อมูลไม่ได้<br><small>${e.message}</small></div>`;

@@ -18,6 +18,7 @@ function daysBetween(a, b) {
   return Math.round((p(a) - p(b)) / 86400000);
 }
 function fmtThai(s) { const [y, m, d] = s.split("-").map(Number); return d + " " + TH_MON[m - 1] + " " + (y + 543); }
+function fmtDayShort(s) { const [, m, d] = s.split("-").map(Number); return d + " " + TH_MON[m - 1]; }
 
 async function api(path) {
   const r = await fetch(path);
@@ -115,8 +116,8 @@ function draw(A, B, days) {
     const cls = dd == null ? "mut" : dd <= -0.1 ? "dn" : dd >= 0.1 ? "up" : "mut";
     const dtxt = dd == null ? "—" : (dd > 0 ? "+" : "") + dd;
     trows += `<tr><td>วันที่ ${i + 1}</td>
-      <td style="color:var(--before)">${a == null ? "—" : a + "%"}</td>
-      <td style="color:var(--after)">${b == null ? "—" : b + "%"}</td>
+      <td style="color:var(--before)"><span class="cd">${fmtDayShort(addDays(A.start, i))}</span>${a == null ? "—" : a + "%"}</td>
+      <td style="color:var(--after)"><span class="cd">${fmtDayShort(addDays(B.start, i))}</span>${b == null ? "—" : b + "%"}</td>
       <td class="badelta ${cls}">${dtxt}</td></tr>`;
   }
   const tableCard = trows ? `
@@ -159,7 +160,9 @@ function draw(A, B, days) {
       responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
       plugins: { legend: { display: false }, tooltip: {
         backgroundColor: t.tipBg, titleColor: t.tipFg, bodyColor: t.tipFg, padding: 11, cornerRadius: 10,
-        callbacks: { label: (i) => i.dataset.label + ": " + (i.parsed.y == null ? "—" : i.parsed.y + "%") } } },
+        callbacks: {
+          title: (its) => { const i = its[0].dataIndex; return `วันที่ ${i + 1} · A ${fmtDayShort(addDays(A.start, i))} · B ${fmtDayShort(addDays(B.start, i))}`; },
+          label: (i) => i.dataset.label + ": " + (i.parsed.y == null ? "—" : i.parsed.y + "%") } } },
       scales: {
         x: { grid: { display: false }, ticks: { color: t.tick, maxTicksLimit: 10, font: { size: 10 } } },
         y: { min: 30, max: 100, grid: { color: t.grid }, ticks: { color: t.tick, stepSize: 10, callback: (v) => v + "%" } },

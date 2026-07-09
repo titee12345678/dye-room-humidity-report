@@ -14,6 +14,9 @@ export default async (req) => {
   const start = u.searchParams.get("start");
   const days = Math.min(180, Math.max(1, parseInt(u.searchParams.get("days") || "14", 10)));
   const device = u.searchParams.get("device") || null;
+  // time-of-day filter: all | day (06:00–17:59) | night (18:00–05:59)
+  const todRaw = u.searchParams.get("tod");
+  const tod = ["day", "night"].includes(todRaw) ? todRaw : "all";
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start || "")) return json({ error: "start ต้องเป็น YYYY-MM-DD" }, 400);
 
   const s = start + " 00:00:00";
@@ -27,7 +30,10 @@ export default async (req) => {
         round((100.0 * avg(CASE WHEN hum >= 60 THEN 1 ELSE 0 END))::numeric, 0) AS pct_over60
       FROM readings
       WHERE ts >= ${s}::timestamp AND ts < ${e}::timestamp
-        AND (${device}::text IS NULL OR device_mac = ${device})`)[0];
+        AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))`)[0];
 
     const series = await sql`
       SELECT to_char(date_trunc('day', ts), 'YYYY-MM-DD') AS t,
@@ -36,6 +42,9 @@ export default async (req) => {
       FROM readings
       WHERE ts >= ${s}::timestamp AND ts < ${e}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
       GROUP BY 1 ORDER BY 1`;
 
     return json({ start, end: endDate, days, summary, series });

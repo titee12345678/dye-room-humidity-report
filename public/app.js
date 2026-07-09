@@ -14,7 +14,8 @@ function chartTheme() {
 }
 
 // state
-let state = { range: "month", date: todayStr(), minDate: null, maxDate: null, count: 0, device: null };
+let state = { range: "month", date: todayStr(), minDate: null, maxDate: null, count: 0, device: null, tod: "all" };
+const TOD_LABEL = { all: "", day: " · ☀️ เฉพาะกลางวัน (06–18 น.)", night: " · 🌙 เฉพาะกลางคืน (18–06 น.)" };
 let charts = [];
 let devices = [];
 let lastData = null;
@@ -90,7 +91,7 @@ async function load() {
   content.innerHTML = `<div class="note"><div class="spin"></div></div>`;
   try {
     const dev = state.device ? `&device=${encodeURIComponent(state.device)}` : "";
-    const data = await api(`/summary?range=${state.range}&date=${encodeURIComponent(state.date)}${dev}`);
+    const data = await api(`/summary?range=${state.range}&date=${encodeURIComponent(state.date)}${dev}&tod=${state.tod}`);
     render(data);
   } catch (e) {
     content.innerHTML = `<div class="note"><div class="big">⚠️</div>โหลดข้อมูลไม่สำเร็จ<br><small>${e.message}</small></div>`;
@@ -118,7 +119,7 @@ function render(data) {
   content.innerHTML = `
     <div class="verdict" style="background:${grad}">
       <div class="vtop"><span class="vemoji">${emoji}</span>
-        <div><div class="vlabel">ช่วง ${data.label} · ${n.toLocaleString()} ครั้งที่วัด</div>
+        <div><div class="vlabel">ช่วง ${data.label} · ${n.toLocaleString()} ครั้งที่วัด${TOD_LABEL[state.tod] || ""}</div>
         <div class="vbig">${verdictBig}</div></div></div>
       <div class="vdesc">ความชื้นเฉลี่ย <b>${avgHum}%</b> · เกินเกณฑ์ 60% เป็นเวลา <b>${over60}%</b> ของช่วงนี้
         ${over60 >= 50 ? "— เสี่ยงสีจับก้อน/เฉดเพี้ยน/ขึ้นรา" : ""}</div>
@@ -424,6 +425,12 @@ function setRange(r) {
 
 document.querySelectorAll("#rangebar button").forEach(b =>
   b.addEventListener("click", () => setRange(b.dataset.range)));
+document.querySelectorAll("#todbar button").forEach(b =>
+  b.addEventListener("click", () => {
+    state.tod = b.dataset.tod;
+    document.querySelectorAll("#todbar button").forEach(x => x.classList.toggle("active", x === b));
+    load();
+  }));
 el("prev").addEventListener("click", () => shift(-1));
 el("next").addEventListener("click", () => shift(1));
 picker.addEventListener("change", () => { state.date = pickerToDate(); load(); });
@@ -486,9 +493,11 @@ el("renameBtn").addEventListener("click", async () => {
     const chosen = await loadDevices();
     if (!chosen) return;
     const q = new URLSearchParams(location.search);
-    const qr = q.get("range"), qd = q.get("date");
+    const qr = q.get("range"), qd = q.get("date"), qt = q.get("tod");
     if (["day", "week", "month", "year"].includes(qr)) state.range = qr;
+    if (["day", "night", "all"].includes(qt)) state.tod = qt;
     document.querySelectorAll("#rangebar button").forEach(b => b.classList.toggle("active", b.dataset.range === state.range));
+    document.querySelectorAll("#todbar button").forEach(b => b.classList.toggle("active", b.dataset.tod === state.tod));
     state.minDate = chosen.min_date; state.maxDate = chosen.max_date; state.count = num(chosen.count) || 0;
     setDataInfo(chosen);
     state.date = qd || (chosen.max_date || todayStr()).slice(0, 7) + "-01";

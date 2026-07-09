@@ -7,6 +7,9 @@ export default async (req) => {
   const range = u.searchParams.get("range") || "month";
   const date = u.searchParams.get("date");
   const device = u.searchParams.get("device") || null; // null = all devices
+  // time-of-day filter: all | day (06:00–17:59) | night (18:00–05:59)
+  const todRaw = u.searchParams.get("tod");
+  const tod = ["day", "night"].includes(todRaw) ? todRaw : "all";
   if (!["day", "week", "month", "year"].includes(range)) return json({ error: "bad range" }, 400);
   if (!date) return json({ error: "date required" }, 400);
 
@@ -22,7 +25,10 @@ export default async (req) => {
         round((100.0 * avg(CASE WHEN hum >= 70 THEN 1 ELSE 0 END))::numeric, 0) AS pct_over70
       FROM readings
       WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
-        AND (${device}::text IS NULL OR device_mac = ${device})`)[0];
+        AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))`)[0];
 
     let points;
     if (grain === "raw") {
@@ -31,6 +37,9 @@ export default async (req) => {
         FROM readings
         WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
         ORDER BY ts`;
     } else if (grain === "day") {
       points = await sql`
@@ -40,6 +49,9 @@ export default async (req) => {
         FROM readings
         WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
         GROUP BY 1 ORDER BY 1`;
     } else { // month
       points = await sql`
@@ -49,6 +61,9 @@ export default async (req) => {
         FROM readings
         WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
         GROUP BY 1 ORDER BY 1`;
     }
 
@@ -59,6 +74,9 @@ export default async (req) => {
       FROM readings
       WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
         AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
       GROUP BY 1 ORDER BY 1`;
 
     // humidity level distribution — "สัดส่วนระดับความชื้น"
@@ -70,7 +88,10 @@ export default async (req) => {
         sum(CASE WHEN hum >= 70 THEN 1 ELSE 0 END)::int AS veryhigh
       FROM readings
       WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
-        AND (${device}::text IS NULL OR device_mac = ${device})`)[0];
+        AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))`)[0];
 
     // day x hour matrix for the heatmap (per day for week/month, per month for year)
     let heat = [];
@@ -81,6 +102,9 @@ export default async (req) => {
         FROM readings
         WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
           AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
         GROUP BY 1, 2 ORDER BY 1, 2`;
     } else if (grain === "month") {
       heat = await sql`
@@ -89,10 +113,13 @@ export default async (req) => {
         FROM readings
         WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
           AND (${device}::text IS NULL OR device_mac = ${device})
+        AND (${tod}::text = 'all'
+          OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
+          OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))
         GROUP BY 1, 2 ORDER BY 1, 2`;
     }
 
-    return json({ range, date, start, end, grain, label, summary, points, hourly, dist, heat });
+    return json({ range, date, start, end, grain, label, tod, summary, points, hourly, dist, heat });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

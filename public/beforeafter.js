@@ -39,10 +39,11 @@ async function render() {
   if (!aStart || !bStart) return;
   el("baContent").innerHTML = `<div class="note"><div class="spin"></div></div>`;
   const dev = state.device ? `&device=${encodeURIComponent(state.device)}` : "";
+  const tod = `&tod=${el("baTod").value}`;
   try {
     const [A, B] = await Promise.all([
-      api(`/api/window?start=${aStart}&days=${days}${dev}`),
-      api(`/api/window?start=${bStart}&days=${days}${dev}`),
+      api(`/api/window?start=${aStart}&days=${days}${dev}${tod}`),
+      api(`/api/window?start=${bStart}&days=${days}${dev}${tod}`),
     ]);
     last = { A, B, days };
     draw(A, B, days);
@@ -132,7 +133,7 @@ function draw(A, B, days) {
 
   el("baContent").innerHTML = `
     <div class="ba-verdict" style="background:${vGrad}">
-      <div class="vlabel">A · ${fmtThai(A.start)} ถึง ${fmtThai(addDays(A.start, days - 1))} &nbsp;|&nbsp; B · ${fmtThai(B.start)} ถึง ${fmtThai(addDays(B.start, days - 1))}</div>
+      <div class="vlabel">A · ${fmtThai(A.start)} ถึง ${fmtThai(addDays(A.start, days - 1))} &nbsp;|&nbsp; B · ${fmtThai(B.start)} ถึง ${fmtThai(addDays(B.start, days - 1))}${{ day: " · ☀️ เฉพาะกลางวัน", night: " · 🌙 เฉพาะกลางคืน" }[el("baTod").value] || ""}</div>
       <div class="vbig">${vBig}</div>
       <div class="vsub">${vSub}</div>
     </div>
@@ -176,6 +177,7 @@ function draw(A, B, days) {
 
 /* ---------- controls ---------- */
 el("baDays").addEventListener("change", render);
+el("baTod").addEventListener("change", render);
 el("baA").addEventListener("change", render);
 el("baB").addEventListener("change", render);
 el("baPreset").addEventListener("click", () => {

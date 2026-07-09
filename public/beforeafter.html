@@ -73,13 +73,23 @@
 
   <div class="card pad ba-controls">
     <button class="presetbtn" id="baPreset" type="button">🌀 พรีเซ็ต: ก่อน/หลังติดพัดลม (29 มิ.ย. 2569)</button>
-    <div class="ba-field">
-      <label for="baDays">ความยาวของแต่ละช่วง</label>
-      <select id="baDays" class="ba-select">
-        <option value="7">7 วัน</option>
-        <option value="14" selected>14 วัน</option>
-        <option value="30">30 วัน</option>
-      </select>
+    <div class="ba-row">
+      <div class="ba-field">
+        <label for="baDays">ความยาวของแต่ละช่วง</label>
+        <select id="baDays" class="ba-select">
+          <option value="7">7 วัน</option>
+          <option value="14" selected>14 วัน</option>
+          <option value="30">30 วัน</option>
+        </select>
+      </div>
+      <div class="ba-field">
+        <label for="baTod">ช่วงเวลาของวัน</label>
+        <select id="baTod" class="ba-select">
+          <option value="all" selected>🕛 ทั้งวัน</option>
+          <option value="day">☀️ กลางวัน (06–18 น.)</option>
+          <option value="night">🌙 กลางคืน (18–06 น.)</option>
+        </select>
+      </div>
     </div>
     <div class="ba-row">
       <div class="ba-field">

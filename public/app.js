@@ -146,7 +146,7 @@ function render(data) {
     <div id="tableWrap"></div>
     <div class="card chart-card">
       <div class="chart-head"><div class="chart-title">ช่วงไหนชื้นที่สุด?</div>
-        <div class="chart-sub">ค่าเฉลี่ยตามชั่วโมง — ยิ่งเย็นยิ่งชื้น (กลางคืน) ยิ่งร้อนยิ่งชื้นน้อย (กลางวัน)</div></div>
+        <div class="chart-sub">ค่าเฉลี่ยรายชั่วโมง ตลอด 00:00–23:59 น. — ยิ่งเย็นยิ่งชื้น (กลางคืน) ยิ่งร้อนยิ่งชื้นน้อย (กลางวัน)</div></div>
       <div id="hourInsight" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 4px 0"></div>
       <div class="chart-box" style="height:230px"><canvas id="chartHour"></canvas></div>
       <div class="legend"><span><i style="background:${COL.blue}"></i>ความชื้น %</span><span><i style="background:${COL.orange}"></i>อุณหภูมิ °C</span></div>
@@ -286,27 +286,41 @@ function drawTable(data) {
 
 function drawHourly(data) {
   const th = chartTheme();
-  const H = (data.hourly || []).map(h => ({ h: num(h.h), hum: num(h.hum), temp: num(h.temp) }));
+  const rows = (data.hourly || []).map(h => ({ h: num(h.h), hum: num(h.hum), temp: num(h.temp) }));
   const ins = el("hourInsight");
-  if (H.length < 2) { if (ins) ins.innerHTML = ""; return; }
-  const top = H.reduce((a, b) => (b.hum > a.hum ? b : a));
-  const low = H.reduce((a, b) => (b.hum < a.hum ? b : a));
+  if (rows.length < 2) { if (ins) ins.innerHTML = ""; return; }
+  const top = rows.reduce((a, b) => (b.hum > a.hum ? b : a));
+  const low = rows.reduce((a, b) => (b.hum < a.hum ? b : a));
+  const hhmm = (h) => pad(h) + ":00";
+  const span = (h) => hhmm(h) + "–" + pad(h) + ":59 น."; // a bucket is the whole clock hour
   if (ins) ins.innerHTML =
     `<div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:14px;padding:11px 13px">
        <div style="font-size:12.5px;color:#4f46e5;font-weight:600">🌙 ชื้นสุด ~${Math.round(top.hum)}%</div>
-       <div style="font-size:12px;color:#6b7c8c;margin-top:2px">ประมาณ ${top.h}:00 น.</div></div>
+       <div style="font-size:12px;color:#6b7c8c;margin-top:2px">ช่วง ${span(top.h)}</div></div>
      <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:11px 13px">
        <div style="font-size:12.5px;color:#ea580c;font-weight:600">☀️ ชื้นน้อยสุด ~${Math.round(low.hum)}%</div>
-       <div style="font-size:12px;color:#6b7c8c;margin-top:2px">ประมาณ ${low.h}:00 น.</div></div>`;
+       <div style="font-size:12px;color:#6b7c8c;margin-top:2px">ช่วง ${span(low.h)}</div></div>`;
+
+  // The axis is a real clock. Unfiltered always spans 00:00–23:59, keeping an hour
+  // with no reading as a gap rather than shifting later hours left. A filtered view
+  // keeps only its own hours — night wraps midnight, so it steps 05:00 -> 18:00.
+  const H = state.tod === "all"
+    ? Array.from({ length: 24 }, (_, h) => rows.find(r => r.h === h) || { h, hum: null, temp: null })
+    : rows;
+
   mkChart(el("chartHour"), {
     type: "line",
-    data: { labels: H.map(h => h.h), datasets: [
-      { label: "ความชื้น", yAxisID: "yH", data: H.map(h => h.hum), borderColor: COL.blue, borderWidth: 2.5, tension: .4, pointRadius: 0, fill: true, backgroundColor: "rgba(14,165,233,.13)" },
-      { label: "อุณหภูมิ", yAxisID: "yT", data: H.map(h => h.temp), borderColor: COL.orange, borderWidth: 2.5, tension: .4, pointRadius: 0 } ] },
+    data: { labels: H.map(r => hhmm(r.h)), datasets: [
+      { label: "ความชื้น", yAxisID: "yH", data: H.map(r => r.hum), borderColor: COL.blue, borderWidth: 2.5, tension: .4, pointRadius: 0, spanGaps: true, fill: true, backgroundColor: "rgba(14,165,233,.13)" },
+      { label: "อุณหภูมิ", yAxisID: "yT", data: H.map(r => r.temp), borderColor: COL.orange, borderWidth: 2.5, tension: .4, pointRadius: 0, spanGaps: true } ] },
     options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
       plugins: { legend: { display: false }, tooltip: { backgroundColor: th.tipBg, titleColor: th.tipFg, bodyColor: th.tipFg, padding: 11, cornerRadius: 10, displayColors: false,
-        callbacks: { title: i => i[0].label + ":00 น.", label: i => i.dataset.label + ": " + i.parsed.y + (i.dataset.yAxisID === "yH" ? "%" : "°C") } } },
-      scales: { x: { grid: { display: false }, ticks: { color: th.tick, callback: v => v + "น.", maxTicksLimit: 8, font: { size: 9.5 } } },
+        callbacks: { title: i => span(H[i[0].dataIndex].h),
+          label: i => i.parsed.y == null ? i.dataset.label + ": ไม่มีข้อมูล"
+            : i.dataset.label + ": " + i.parsed.y + (i.dataset.yAxisID === "yH" ? "%" : "°C") } } },
+      // labels are already real times ("13:00"), so no tick callback — the default
+      // renders the label itself instead of the category index it gets passed
+      scales: { x: { grid: { display: false }, ticks: { color: th.tick, maxTicksLimit: 8, autoSkip: true, maxRotation: 0, font: { size: 9.5 } } },
         yH: { position: "left", grid: { color: th.grid }, ticks: { color: COL.blue, callback: v => v + "%" } },
         yT: { position: "right", grid: { display: false }, ticks: { color: COL.orange, callback: v => v + "°" } } } },
   });

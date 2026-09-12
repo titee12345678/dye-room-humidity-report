@@ -4,7 +4,7 @@ import json, re, statistics
 from datetime import datetime
 from collections import defaultdict
 
-SRC = "IBS-TH3-PLUS_05282026 00:00-06132026 23:59.csv"
+SRC = "IBS-TH3-PLUS_05282026_0000-06132026_2359.csv"
 
 # File is UTF-16 with tab separators
 with open(SRC, "r", encoding="utf-16") as f:

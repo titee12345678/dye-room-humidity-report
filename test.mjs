@@ -2,6 +2,7 @@
 import { parseText, decodeBuffer } from "./public/parse.js";
 import { resolvePeriod } from "./shared/period.js";
 import { analyzeAgreement } from "./shared/agreement.js";
+import { analyzeDayNight } from "./shared/daynight.js";
 
 let pass = 0, fail = 0;
 function ok(name, cond, extra = "") {
@@ -130,6 +131,60 @@ console.log("analyzeAgreement — buckets with only one device are skipped");
   const r = analyzeAgreement(series, devices, "hum", { good: 3, bad: 6 });
   eq("gapAvg over 2 buckets", r.gapAvg, 1.5);
   eq("gapMax", r.gapMax, 2);
+}
+
+console.log("analyzeDayNight — night much wetter than day");
+{
+  const day = { n: 1152, avgHum: 62.0, minHum: 42.9, maxHum: 80.7, avgTemp: 33.1, pctOver60: 55 };
+  const night = { n: 1152, avgHum: 76.4, minHum: 55.0, maxHum: 86.3, avgTemp: 29.1, pctOver60: 92 };
+  const r = analyzeDayNight(day, night);
+  eq("gap", r.gap, 14.4);
+  eq("dHum is night minus day", r.dHum, 14.4);
+  eq("level large", r.level, "large");
+  eq("night is the wetter side", r.wetter, "night");
+  eq("day is the hotter side", r.hotter, "day");
+  eq("dOver60", r.dOver60, 37);
+}
+
+console.log("analyzeDayNight — day wetter (sign flips, not the level)");
+{
+  const r = analyzeDayNight({ n: 10, avgHum: 70, avgTemp: 30, pctOver60: 80 },
+                            { n: 10, avgHum: 63, avgTemp: 30, pctOver60: 62 });
+  eq("dHum negative", r.dHum, -7);
+  eq("gap is absolute", r.gap, 7);
+  eq("level medium", r.level, "medium");
+  eq("day is the wetter side", r.wetter, "day");
+  eq("no hotter side (temp equal)", r.hotter, null);
+}
+
+console.log("analyzeDayNight — a gap inside sensor noise names no side");
+{
+  const r = analyzeDayNight({ n: 10, avgHum: 70, avgTemp: 30.2, pctOver60: 80 },
+                            { n: 10, avgHum: 71.9, avgTemp: 30, pctOver60: 82 });
+  eq("level none", r.level, "none");
+  eq("wetter null", r.wetter, null);
+  eq("hotter null (under 0.5 deg)", r.hotter, null);
+  eq("gap still reported", r.gap, 1.9);
+}
+
+console.log("analyzeDayNight — level boundaries are exclusive at the top");
+{
+  const at = (g) => analyzeDayNight({ n: 1, avgHum: 60 }, { n: 1, avgHum: 60 + g }).level;
+  eq("1.9 -> none", at(1.9), "none");
+  eq("2 -> small", at(2), "small");
+  eq("4.9 -> small", at(4.9), "small");
+  eq("5 -> medium", at(5), "medium");
+  eq("9.9 -> medium", at(9.9), "medium");
+  eq("10 -> large", at(10), "large");
+}
+
+console.log("analyzeDayNight — one side empty gives nodata");
+{
+  const r = analyzeDayNight({ n: 0 }, { n: 144, avgHum: 71 });
+  eq("not ok", r.ok, false);
+  eq("level nodata", r.level, "nodata");
+  eq("dHum null", r.dHum, null);
+  eq("gap null", r.gap, null);
 }
 
 console.log(`\n${fail === 0 ? "✅ PASS" : "❌ FAIL"} — ${pass} passed, ${fail} failed`);

@@ -19,6 +19,8 @@ public/  (เว็บ static, ดูสาธารณะ)        netlify/funct
 - **เปิดให้ดูและอัปโหลดได้** (ไม่ต้องใส่รหัส)
 - กันข้อมูลซ้ำด้วย primary key `(device_mac, ts)` + `ON CONFLICT DO NOTHING`
 - **รองรับหลายเครื่อง/หลายห้อง** — เลือกดูแยกเครื่องบนแดชบอร์ด + ตั้งชื่อเครื่องได้ (ตาราง `devices`)
+- กรองดูเฉพาะ **กลางวัน (06–18 น.)** หรือ **กลางคืน (18–06 น.)** ได้ทุกกราฟ
+- **เทียบกลางวัน vs กลางคืน** ในมุมมอง “ทั้งวัน” — ส่วนต่างความชื้น/อุณหภูมิ/เวลาที่เกิน 60% พร้อมตัดสินว่าต่างกันมากแค่ไหน
 - ลิงก์แชร์มุมมองเฉพาะได้ เช่น `/?range=month&date=2026-06-01`
 
 ## โครงสร้างไฟล์
@@ -29,6 +31,7 @@ migrate.js              สร้างตาราง (รันครั้ง
 seed.js                 นำเข้าข้อมูลเดิมจาก data.json
 shared/db.js            Neon client + json helper
 shared/period.js        คำนวณช่วงวัน/สัปดาห์/เดือน/ปี → SQL bounds
+shared/daynight.js      ตัดสินว่ากลางวัน/กลางคืนต่างกันมากไหม (ตรรกะล้วน มีเทสต์)
 netlify/functions/      range.js · summary.js · upload.js
 public/                 index.html · upload.html · app.js · upload-app.js · parse.js · styles.css · chart.umd.min.js
 public/snapshot.html    รายงาน static เดิม (เปิดออฟไลน์ได้)

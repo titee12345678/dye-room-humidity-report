@@ -151,6 +151,9 @@ function render(data) {
       <div class="chart-box" style="height:230px"><canvas id="chartHour"></canvas></div>
       <div class="legend"><span><i style="background:${COL.blue}"></i>ความชื้น %</span><span><i style="background:${COL.orange}"></i>อุณหภูมิ °C</span></div>
     </div>
+    ${data.split ? `
+    <div class="h2" style="margin-top:6px"><span class="b" style="background:var(--indigo)"></span>กลางวัน vs กลางคืน — ต่างกันมากไหม?</div>
+    <div id="dnWrap"></div>` : ""}
     <div class="h2" style="margin-top:6px"><span class="b"></span>สัดส่วนระดับความชื้น (ช่วงนี้)</div>
     <div class="card pad">
       <div class="dist">
@@ -171,6 +174,7 @@ function render(data) {
   drawTable(data);
   drawHourly(data);
   drawDist(data);
+  drawDayNight(data);
   drawHeat(data);
 }
 
@@ -330,6 +334,116 @@ function drawDist(data) {
     return `<div class="lv"><span class="sw" style="background:${o[3]}"></span>
       <span class="tx">${o[1]}<small>${o[2]}</small></span><span class="pct" style="color:${o[3]}">${pct}%</span></div>`;
   }).join("");
+}
+
+/* ---------- day vs night — "ต่างกันมากไหม" (verdict comes from the API) ---------- */
+const DN_TONE = {
+  large: { grad: "linear-gradient(135deg,#e11d48,#9f1239)", emoji: "⚠️" },
+  medium: { grad: "linear-gradient(135deg,#ea580c,#c2410c)", emoji: "📊" },
+  small: { grad: "linear-gradient(135deg,#0891b2,#0e7490)", emoji: "🔍" },
+  none: { grad: "linear-gradient(135deg,#16a34a,#0f766e)", emoji: "✅" },
+  nodata: { grad: "linear-gradient(135deg,#64748b,#475569)", emoji: "📭" },
+};
+const DN_DAY = "#f59e0b", DN_NIGHT = "#6366f1";
+
+function dnHeadline(v) {
+  if (!v.ok) return "ยังเทียบไม่ได้ — ข้อมูลไม่ครบทั้งสองช่วง";
+  if (v.level === "none") return "≈ กลางวันกับกลางคืนชื้นพอ ๆ กัน";
+  return (v.wetter === "night" ? "🌙 กลางคืนชื้นกว่ากลางวัน " : "☀️ กลางวันชื้นกว่ากลางคืน ") + v.gap + "%";
+}
+function dnAdvice(v) {
+  if (!v.ok) return "ช่วงนี้มีข้อมูลแค่ฝั่งเดียว — เลือกช่วงเวลาอื่น หรืออัปโหลดข้อมูลเพิ่ม";
+  if (v.level === "none") return "ความชื้นนิ่งตลอดวัน — ตั้งเครื่องลดความชื้น/พัดลมแบบเดียวได้ทั้งวัน";
+  if (v.wetter === "night") return v.level === "small"
+    ? "กลางคืนชื้นกว่านิดหน่อย ยังคุมด้วยการตั้งค่าเดียวได้"
+    : "ควรเน้นเดินเครื่องลดความชื้น/พัดลมช่วง 18:00–06:00 น. ซึ่งเป็นช่วงที่สีเสี่ยงจับก้อนที่สุด";
+  return v.level === "small"
+    ? "กลางวันชื้นกว่านิดหน่อย ยังคุมด้วยการตั้งค่าเดียวได้"
+    : "ผิดจากปกติ — กลางวันชื้นกว่า ลองตรวจการระบายอากาศ ประตูที่เปิดค้าง หรือความชื้นที่เข้ามาตอนทำงาน";
+}
+
+function drawDayNight(data) {
+  const wrap = el("dnWrap");
+  if (!wrap || !data.split) return;
+  const D = data.split.day, N = data.split.night, v = data.split.verdict;
+  const tone = DN_TONE[v.ok ? v.level : "nodata"];
+  const both = Boolean(num(D.n) && num(N.n));
+
+  // one side of the comparison
+  const col = (o, cls, emoji, name, hours) => {
+    const n = num(o.n) || 0;
+    if (!n) return `<div class="dn-col ${cls}"><div class="dn-head">${emoji} ${name}<small>${hours}</small></div>
+      <div class="dn-empty">ไม่มีข้อมูล</div></div>`;
+    const h = num(o.avgHum), info = humInfo(h);
+    return `<div class="dn-col ${cls}">
+      <div class="dn-head">${emoji} ${name}<small>${hours}</small></div>
+      <div class="dn-big" style="color:${info.c}">${h}<span>%</span></div>
+      <div class="dn-tag" style="background:${info.bg};color:${info.c}">${info.label}</div>
+      <div class="dn-rows">
+        <div><span>ช่วงต่ำ–สูง</span><b>${num(o.minHum)}–${num(o.maxHum)}%</b></div>
+        <div><span>เกินเกณฑ์ 60%</span><b>${num(o.pctOver60)}% ของเวลา</b></div>
+        <div><span>อุณหภูมิเฉลี่ย</span><b>${num(o.avgTemp)}°C</b></div>
+        <div><span>จำนวนที่วัด</span><b>${n.toLocaleString()}</b></div>
+      </div></div>`;
+  };
+
+  // Δ = กลางคืน − กลางวัน, so a positive number always means "night is higher"
+  const chip = (lab, d, unit, dead) => {
+    const has = d != null && Math.abs(d) >= dead;
+    const side = !has ? "" : d > 0 ? "night" : "day";
+    const txt = d == null ? "—" : !has ? "≈ เท่ากัน" : (d > 0 ? "🌙 +" : "☀️ +") + Math.abs(d) + unit;
+    return `<div class="dn-chip ${side}"><span>${lab}</span><b>${txt}</b></div>`;
+  };
+
+  wrap.innerHTML = `
+    <div class="verdict dn-verdict" style="background:${tone.grad}">
+      <div class="vtop"><span class="vemoji">${tone.emoji}</span>
+        <div><div class="vlabel">ช่วง ${data.label} · เทียบ ☀️ 06–18 น. กับ 🌙 18–06 น.</div>
+        <div class="vbig">${dnHeadline(v)}</div></div></div>
+      <div class="vdesc">${v.ok ? `<b>${v.label}</b> — เฉลี่ยกลางวัน ${num(D.avgHum)}% · กลางคืน ${num(N.avgHum)}%<br>` : ""}${dnAdvice(v)}</div>
+    </div>
+    <div class="dn-cols">
+      ${col(D, "day", "☀️", "กลางวัน", "06:00–18:00 น.")}
+      ${col(N, "night", "🌙", "กลางคืน", "18:00–06:00 น.")}
+    </div>
+    <div class="dn-deltas">
+      ${chip("💧 ความชื้น", v.dHum, "%", 0.1)}
+      ${chip("📊 เวลาที่เกิน 60%", v.dOver60, "%", 1)}
+      ${chip("🌡️ อุณหภูมิ", v.dTemp, "°", 0.1)}
+    </div>
+    <div class="dn-cap">ตัวเลขด้านบนคือส่วนต่าง <b>กลางคืน − กลางวัน</b> · 🌙 = กลางคืนสูงกว่า · ☀️ = กลางวันสูงกว่า</div>
+    ${both ? `
+    <div class="card chart-card">
+      <div class="chart-head"><div class="chart-title">ช่วงความชื้นของทั้งสองฝั่ง</div>
+        <div class="chart-sub">แท่ง = ต่ำสุด–สูงสุด · จุด = ค่าเฉลี่ย · เส้นประแดง = เกณฑ์เก็บสีย้อม 60%</div></div>
+      <div class="chart-box" style="height:230px"><canvas id="dnChart"></canvas></div>
+    </div>` : ""}`;
+
+  if (!both) return; // only one side has data — nothing to plot
+  const t = chartTheme();
+  mkChart(el("dnChart"), {
+    type: "bar",
+    data: { labels: ["☀️ กลางวัน", "🌙 กลางคืน"], datasets: [
+      { label: "ช่วง", data: [[num(D.minHum), num(D.maxHum)], [num(N.minHum), num(N.maxHum)]],
+        backgroundColor: ["rgba(245,158,11,.42)", "rgba(99,102,241,.42)"],
+        borderColor: [DN_DAY, DN_NIGHT], borderWidth: 1.5, borderRadius: 7,
+        barPercentage: .55, categoryPercentage: .8, order: 3 },
+      { type: "line", label: "เฉลี่ย", data: [num(D.avgHum), num(N.avgHum)], showLine: false,
+        pointRadius: 8, pointHoverRadius: 9, pointBackgroundColor: [DN_DAY, DN_NIGHT],
+        pointBorderColor: "#fff", pointBorderWidth: 2.5, order: 1 },
+      { type: "line", label: "เกณฑ์ 60%", data: [60, 60], borderColor: "rgba(220,38,38,.6)",
+        borderWidth: 1.5, borderDash: [5, 4], pointRadius: 0, order: 2 },
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: t.tipBg, titleColor: t.tipFg, bodyColor: t.tipFg, padding: 11, cornerRadius: 10, displayColors: false,
+        callbacks: { label: (i) => i.dataset.label === "ช่วง" ? "ช่วง " + i.raw[0] + "–" + i.raw[1] + "%"
+          : i.dataset.label === "เฉลี่ย" ? "เฉลี่ย " + i.parsed.y + "%" : "เกณฑ์ 60%" } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: t.tick, font: { size: 12 } } },
+        y: { min: 30, max: 100, grid: { color: t.grid }, ticks: { color: t.tick, stepSize: 10, callback: (x) => x + "%" } },
+      } },
+  });
 }
 
 /* ---------- heatmap (day x hour), drawn with a CSS grid ---------- */

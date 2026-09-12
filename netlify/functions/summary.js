@@ -1,5 +1,6 @@
 import { sql, json } from "../../shared/db.js";
 import { resolvePeriod } from "../../shared/period.js";
+import { analyzeDayNight } from "../../shared/daynight.js";
 
 // GET /api/summary?range=day|week|month|year&date=YYYY-MM-DD
 export default async (req) => {
@@ -93,6 +94,38 @@ export default async (req) => {
           OR (${tod}::text = 'day' AND extract(hour from ts) BETWEEN 6 AND 17)
           OR (${tod}::text = 'night' AND (extract(hour from ts) < 6 OR extract(hour from ts) >= 18)))`)[0];
 
+    // day vs night side by side — "กลางวันกับกลางคืนต่างกันมากไหม"
+    // Only for the unfiltered view; once tod picks a side there is nothing to compare.
+    let split = null;
+    if (tod === "all") {
+      const r = (await sql`
+        SELECT
+          (count(*) FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17))::int AS d_n,
+          round((avg(hum) FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17))::numeric, 1) AS d_avg_hum,
+          min(hum) FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17) AS d_min_hum,
+          max(hum) FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17) AS d_max_hum,
+          round((avg(temp) FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17))::numeric, 1) AS d_avg_temp,
+          round((100.0 * avg(CASE WHEN hum >= 60 THEN 1 ELSE 0 END)
+            FILTER (WHERE extract(hour from ts) BETWEEN 6 AND 17))::numeric, 0) AS d_over60,
+          (count(*) FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18))::int AS n_n,
+          round((avg(hum) FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18))::numeric, 1) AS n_avg_hum,
+          min(hum) FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18) AS n_min_hum,
+          max(hum) FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18) AS n_max_hum,
+          round((avg(temp) FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18))::numeric, 1) AS n_avg_temp,
+          round((100.0 * avg(CASE WHEN hum >= 60 THEN 1 ELSE 0 END)
+            FILTER (WHERE extract(hour from ts) < 6 OR extract(hour from ts) >= 18))::numeric, 0) AS n_over60
+        FROM readings
+        WHERE ts >= ${start}::timestamp AND ts < ${end}::timestamp
+          AND (${device}::text IS NULL OR device_mac = ${device})`)[0];
+      split = {
+        day: { n: r.d_n, avgHum: r.d_avg_hum, minHum: r.d_min_hum, maxHum: r.d_max_hum,
+               avgTemp: r.d_avg_temp, pctOver60: r.d_over60 },
+        night: { n: r.n_n, avgHum: r.n_avg_hum, minHum: r.n_min_hum, maxHum: r.n_max_hum,
+                 avgTemp: r.n_avg_temp, pctOver60: r.n_over60 },
+      };
+      split.verdict = analyzeDayNight(split.day, split.night);
+    }
+
     // day x hour matrix for the heatmap (per day for week/month, per month for year)
     let heat = [];
     if (grain === "day") {
@@ -119,7 +152,7 @@ export default async (req) => {
         GROUP BY 1, 2 ORDER BY 1, 2`;
     }
 
-    return json({ range, date, start, end, grain, label, tod, summary, points, hourly, dist, heat });
+    return json({ range, date, start, end, grain, label, tod, summary, points, hourly, dist, heat, split });
   } catch (e) {
     return json({ error: e.message }, 500);
   }

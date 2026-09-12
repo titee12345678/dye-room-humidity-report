@@ -351,36 +351,54 @@ function drawDist(data) {
 }
 
 /* ---------- day vs night — "ต่างกันมากไหม" (verdict comes from the API) ---------- */
+// Colour and icon follow the RISK (how humid the room actually is), never the gap.
+// A room at 75% day and night has no gap worth acting on and is still a bad room —
+// showing that as a green tick would read as good news. The gap drives the wording.
 const DN_TONE = {
-  large: { grad: "linear-gradient(135deg,#e11d48,#9f1239)", emoji: "⚠️" },
-  medium: { grad: "linear-gradient(135deg,#ea580c,#c2410c)", emoji: "📊" },
-  small: { grad: "linear-gradient(135deg,#0891b2,#0e7490)", emoji: "🔍" },
-  none: { grad: "linear-gradient(135deg,#16a34a,#0f766e)", emoji: "✅" },
+  bad: { grad: "linear-gradient(135deg,#e11d48,#9f1239)", emoji: "🚨" },
+  warn: { grad: "linear-gradient(135deg,#ea580c,#c2410c)", emoji: "⚠️" },
+  ok: { grad: "linear-gradient(135deg,#16a34a,#0f766e)", emoji: "✅" },
   nodata: { grad: "linear-gradient(135deg,#64748b,#475569)", emoji: "📭" },
 };
 const DN_DAY = "#f59e0b", DN_NIGHT = "#6366f1";
 
 function dnHeadline(v) {
   if (!v.ok) return "ยังเทียบไม่ได้ — ข้อมูลไม่ครบทั้งสองช่วง";
-  if (v.level === "none") return "≈ กลางวันกับกลางคืนชื้นพอ ๆ กัน";
-  return (v.wetter === "night" ? "🌙 กลางคืนชื้นกว่ากลางวัน " : "☀️ กลางวันชื้นกว่ากลางคืน ") + v.gap + "%";
+  if (v.level !== "none") {
+    return (v.wetter === "night" ? "🌙 กลางคืนชื้นกว่ากลางวัน " : "☀️ กลางวันชื้นกว่ากลางคืน ") + v.gap + "%";
+  }
+  // sides match — say so, but never let that alone sound like good news
+  if (v.risk === "ok") return "≈ ชื้นพอ ๆ กัน และอยู่ในเกณฑ์ทั้งคู่";
+  return "≈ ชื้นพอ ๆ กัน — แต่เกินเกณฑ์ทั้งกลางวันและกลางคืน";
 }
+
 function dnAdvice(v) {
   if (!v.ok) return "ช่วงนี้มีข้อมูลแค่ฝั่งเดียว — เลือกช่วงเวลาอื่น หรืออัปโหลดข้อมูลเพิ่ม";
-  if (v.level === "none") return "ความชื้นนิ่งตลอดวัน — ตั้งเครื่องลดความชื้น/พัดลมแบบเดียวได้ทั้งวัน";
-  if (v.wetter === "night") return v.level === "small"
-    ? "กลางคืนชื้นกว่านิดหน่อย ยังคุมด้วยการตั้งค่าเดียวได้"
-    : "ควรเน้นเดินเครื่องลดความชื้น/พัดลมช่วง 18:00–06:00 น. ซึ่งเป็นช่วงที่สีเสี่ยงจับก้อนที่สุด";
-  return v.level === "small"
-    ? "กลางวันชื้นกว่านิดหน่อย ยังคุมด้วยการตั้งค่าเดียวได้"
-    : "ผิดจากปกติ — กลางวันชื้นกว่า ลองตรวจการระบายอากาศ ประตูที่เปิดค้าง หรือความชื้นที่เข้ามาตอนทำงาน";
+  const when = v.wetter === "night" ? "18:00–06:00 น." : "06:00–18:00 น.";
+
+  if (v.sidesOver60 === 0) {
+    return v.level === "none"
+      ? "ต่ำกว่าเกณฑ์ 60% และนิ่งตลอดวัน — ตั้งเครื่องลดความชื้น/พัดลมแบบเดียวได้ทั้งวัน"
+      : "ต่ำกว่าเกณฑ์ 60% ทั้งคู่ ต่างกันบ้างแต่ยังไม่ต้องแยกการจัดการ";
+  }
+  if (v.sidesOver60 === 1) {
+    const over = v.wetter === "night" ? "กลางคืน" : "กลางวัน";
+    return `${over}เกินเกณฑ์ 60% ส่วนอีกฝั่งยังอยู่ในเกณฑ์ — เน้นเดินเครื่องลดความชื้นช่วง ${when}`;
+  }
+  // both sides over the threshold
+  if (v.level === "none") {
+    return ("เกินเกณฑ์ 60% พอ ๆ กันทั้งวัน — ต้องลดความชื้นทั้งวัน ไม่ใช่เฉพาะช่วงใดช่วงหนึ่ง " +
+      (v.risk === "bad" ? "ตอนนี้สีเสี่ยงจับก้อน/ขึ้นราตลอดเวลา" : "")).trim();
+  }
+  return `เกินเกณฑ์ 60% ทั้งสองช่วง โดย${v.wetter === "night" ? "กลางคืน" : "กลางวัน"}หนักกว่า — ` +
+    `ต้องลดทั้งวัน และเพิ่มกำลังช่วง ${when} เป็นพิเศษ`;
 }
 
 function drawDayNight(data) {
   const wrap = el("dnWrap");
   if (!wrap || !data.split) return;
   const D = data.split.day, N = data.split.night, v = data.split.verdict;
-  const tone = DN_TONE[v.ok ? v.level : "nodata"];
+  const tone = DN_TONE[v.ok ? v.risk : "nodata"] || DN_TONE.nodata;
   const both = Boolean(num(D.n) && num(N.n));
 
   // one side of the comparison

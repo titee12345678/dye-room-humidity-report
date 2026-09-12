@@ -3,7 +3,10 @@
 //
 // day / night: one period's aggregates per side,
 //   { n, avgHum, minHum, maxHum, avgTemp, pctOver60 }
-// Returns the gaps (night − day), which side is worse, and how big the gap is.
+// Returns the gaps (night − day), how big the gap is, and — separately — how bad
+// the humidity actually is. Those two are NOT the same question: a room sitting at
+// 75% both day and night has no gap worth acting on and is still a bad room, so the
+// card must not read as good news just because the two sides match.
 
 // How wide a humidity gap has to be before it means anything for dye storage.
 // Under 2% sits inside the sensor's own spread; 10%+ is the point where day and
@@ -14,6 +17,10 @@ const HUM_LEVELS = [
   { under: 10, level: "medium", label: "ต่างกันชัดเจน" },
   { under: Infinity, level: "large", label: "ต่างกันมาก" },
 ];
+
+// Storage thresholds — the same ones the dashboard colours by: dye powder wants
+// under 60% RH, and 70%+ is where caking and mould get likely.
+const HUM_OVER = 60, HUM_BAD = 70;
 
 const round1 = (v) => Math.round(v * 10) / 10;
 const num = (v) => (v == null ? null : Number(v));
@@ -30,6 +37,7 @@ export function analyzeDayNight(day, night) {
     return {
       ok: false, level: "nodata", label: "ข้อมูลไม่พอเทียบ",
       dHum: null, dTemp: null, dOver60: null, gap: null, wetter: null, hotter: null,
+      risk: "nodata", worstHum: null, sidesOver60: 0,
     };
   }
 
@@ -43,5 +51,15 @@ export function analyzeDayNight(day, night) {
   const wetter = bucket.level === "none" ? null : dHum > 0 ? "night" : "day";
   const hotter = dTemp == null || Math.abs(dTemp) < 0.5 ? null : dTemp > 0 ? "night" : "day";
 
-  return { ok: true, level: bucket.level, label: bucket.label, dHum, dTemp, dOver60, gap, wetter, hotter };
+  // risk is about the readings themselves, not the gap — this is what the card's
+  // colour and icon must follow, so "ชื้นพอ ๆ กัน" at 75% never shows up as a green tick
+  const hums = [num(day.avgHum), num(night.avgHum)].filter((v) => v != null);
+  const worstHum = hums.length ? round1(Math.max(...hums)) : null;
+  const sidesOver60 = hums.filter((v) => v >= HUM_OVER).length;
+  const risk = worstHum == null ? "nodata"
+    : worstHum >= HUM_BAD ? "bad"
+    : worstHum >= HUM_OVER ? "warn" : "ok";
+
+  return { ok: true, level: bucket.level, label: bucket.label, dHum, dTemp, dOver60, gap,
+    wetter, hotter, risk, worstHum, sidesOver60 };
 }

@@ -187,5 +187,41 @@ console.log("analyzeDayNight — one side empty gives nodata");
   eq("gap null", r.gap, null);
 }
 
+console.log("analyzeDayNight — risk follows the readings, not the day/night gap");
+{
+  // the bug this guards: two sides that match at 75% must never look like good news
+  const both75 = analyzeDayNight({ n: 10, avgHum: 75 }, { n: 10, avgHum: 76 });
+  eq("matching sides -> no gap", both75.level, "none");
+  eq("but the room is still bad", both75.risk, "bad");
+  eq("worst side reported", both75.worstHum, 76);
+  eq("both sides over 60", both75.sidesOver60, 2);
+
+  const both52 = analyzeDayNight({ n: 10, avgHum: 52 }, { n: 10, avgHum: 53 });
+  eq("matching and actually dry -> ok", both52.risk, "ok");
+  eq("neither side over 60", both52.sidesOver60, 0);
+
+  const bigGapLow = analyzeDayNight({ n: 10, avgHum: 44 }, { n: 10, avgHum: 53 });
+  eq("a wide gap under the threshold is still ok", bigGapLow.risk, "ok");
+  eq("level still reports the gap", bigGapLow.level, "medium");
+}
+
+console.log("analyzeDayNight — risk thresholds sit at 60 and 70");
+{
+  const at = (d, n) => analyzeDayNight({ n: 1, avgHum: d }, { n: 1, avgHum: n });
+  eq("59.9 / 59.9 -> ok", at(59.9, 59.9).risk, "ok");
+  eq("59.9 / 60 -> warn (worst side decides)", at(59.9, 60).risk, "warn");
+  eq("69.9 -> warn", at(50, 69.9).risk, "warn");
+  eq("70 -> bad", at(50, 70).risk, "bad");
+  eq("one side over counts as one", at(55, 64).sidesOver60, 1);
+}
+
+console.log("analyzeDayNight — no data carries no risk claim");
+{
+  const r = analyzeDayNight({ n: 0 }, { n: 144, avgHum: 71 });
+  eq("risk nodata", r.risk, "nodata");
+  eq("worstHum null", r.worstHum, null);
+  eq("sidesOver60 zero", r.sidesOver60, 0);
+}
+
 console.log(`\n${fail === 0 ? "✅ PASS" : "❌ FAIL"} — ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
